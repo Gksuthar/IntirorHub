@@ -29,6 +29,48 @@ export class ApiError extends Error {
   }
 }
 
+export type UserRole = "ADMIN" | "MANAGER" | "AGENT" | "CLIENT";
+
+export interface AuthUser {
+  _id: string;
+  name?: string;
+  email: string;
+  phone?: string;
+  companyName: string;
+  role: UserRole;
+  parentId?: string | null;
+  isVerified: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SiteDto {
+  id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  createdAt: string;
+}
+
+export interface FeedUserDto {
+  name: string;
+  role: string;
+  avatar: string;
+}
+
+export interface FeedItemDto {
+  id: string;
+  type: "update" | "photo" | "document" | "milestone";
+  content: string;
+  images: string[];
+  timestamp: string;
+  likes: number;
+  comments: number;
+  siteId: string;
+  siteName?: string;
+  user: FeedUserDto;
+}
+
 
 const buildHeaders = (token?: string, hasBody = false): HeadersInit => {
   const headers: HeadersInit = {};
@@ -103,7 +145,7 @@ export const authApi = {
     request<{
       message: string;
       token: string;
-      user: unknown;
+      user: AuthUser;
     }>("/auth/verify-otp", {
       method: "POST",
       body,
@@ -119,14 +161,14 @@ export const authApi = {
     body: {
       email: string;
       name?: string;
-      role: "MANAGER" | "AGENT" | "CLIENT";
+      role: Exclude<UserRole, "ADMIN">;
       phone?: string;
     },
     token: string
   ) =>
     request<{
       message: string;
-      user: unknown;
+      user: AuthUser;
     }>("/users/invite", {
       method: "POST",
       body,
@@ -137,14 +179,14 @@ export const authApi = {
     request<{
       message: string;
       token: string;
-      user: unknown;
+      user: AuthUser;
     }>("/auth/login", {
       method: "POST",
       body,
     }),
 
   me: (token: string) =>
-    request<unknown>("/auth/me", {
+    request<{ user: AuthUser }>("/auth/me", {
       method: "GET",
       token,
     }),
@@ -155,15 +197,69 @@ export const userApi = {
     body: {
       email: string;
       name?: string;
-      role: "MANAGER" | "AGENT" | "CLIENT";
+      role: Exclude<UserRole, "ADMIN">;
       phone?: string;
     },
     token: string
   ) =>
     request<{
       message: string;
-      user: unknown;
+      user: AuthUser;
     }>("/users/invite", {
+      method: "POST",
+      body,
+      token,
+    }),
+};
+
+export const siteApi = {
+  listSites: (token: string) =>
+    request<{
+      sites: SiteDto[];
+    }>("/sites", {
+      method: "GET",
+      token,
+    }),
+
+  createSite: (
+    body: {
+      name: string;
+      description?: string;
+      image?: string;
+    },
+    token: string
+  ) =>
+    request<{
+      message: string;
+      site: SiteDto;
+    }>("/sites", {
+      method: "POST",
+      body,
+      token,
+    }),
+};
+
+export const feedApi = {
+  listFeed: (siteId: string, token: string) =>
+    request<{
+      items: FeedItemDto[];
+    }>(`/feed?siteId=${encodeURIComponent(siteId)}`, {
+      method: "GET",
+      token,
+    }),
+
+  createFeed: (
+    body: {
+      siteId: string;
+      content: string;
+      images: string[];
+    },
+    token: string
+  ) =>
+    request<{
+      message: string;
+      item: FeedItemDto;
+    }>("/feed", {
       method: "POST",
       body,
       token,

@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { authApi, ApiError } from "../services/api";
+import { authApi, ApiError, type UserRole } from "../services/api";
 import { Mail, User, Phone, Shield, Loader2 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
-const roles = [
+const roles: Array<{ value: Exclude<UserRole, "ADMIN">; label: string; description: string }> = [
   { value: "MANAGER", label: "Manager", description: "Project management" },
   { value: "AGENT", label: "Agent", description: "Field execution" },
   { value: "CLIENT", label: "Client", description: "Project visibility" },
@@ -11,25 +12,31 @@ const roles = [
 
 const Invite: React.FC = () => {
   const navigate = useNavigate();
+  const { token, user, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     name: "",
     phone: "",
     role: roles[0].value,
   });
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const token = useMemo(() => localStorage.getItem("authToken"), []);
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
     if (!token) {
       navigate("/login", { replace: true });
       return;
     }
 
-    authApi.me(token).catch(() => navigate("/login", { replace: true }));
-  }, [navigate, token]);
+    if (user?.role !== "ADMIN") {
+      navigate("/", { replace: true });
+    }
+  }, [authLoading, navigate, token, user]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
@@ -47,13 +54,13 @@ const Invite: React.FC = () => {
     setSuccess(null);
 
     try {
-      setLoading(true);
+      setIsSubmitting(true);
       await authApi.inviteUser(
         {
           email: formData.email.trim(),
           name: formData.name.trim() || undefined,
           phone: formData.phone.trim() || undefined,
-          role: formData.role as "MANAGER" | "AGENT" | "CLIENT",
+          role: formData.role,
         },
         token
       );
@@ -64,7 +71,7 @@ const Invite: React.FC = () => {
       const message = err instanceof ApiError ? err.message : "Unable to send invite";
       setError(message);
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -163,10 +170,10 @@ const Invite: React.FC = () => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             className="w-full rounded-xl bg-black py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-black/40 flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Sending invite

@@ -1,6 +1,6 @@
 import Header from "../component/Header/Header";
 import { Outlet } from "react-router-dom";
-import { Home, CreditCard, FileText, TrendingUp, Rss, UserPlus } from "lucide-react";
+import { Home, CreditCard, FileText, TrendingUp, Rss } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const MainLayout = () => {
@@ -12,7 +12,6 @@ const MainLayout = () => {
         { path: "/boq", icon: FileText, label: "BOQ" },
         { path: "/expenses", icon: TrendingUp, label: "Expenses" },
         { path: "/feed", icon: Rss, label: "Feed" },
-        { path: "/invite", icon: UserPlus, label: "Invite" },
     ];
 
     const isActive = (path: string) => {

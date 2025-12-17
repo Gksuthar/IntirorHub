@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Building2, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { authApi, ApiError } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { setSession } = useAuth();
 
   useEffect(() => {
     const prefilledEmail = (location.state as { email?: string } | null)?.email;
@@ -37,11 +39,8 @@ const Login: React.FC = () => {
         password: formData.password,
       });
 
-      if (response.token) {
-        localStorage.setItem("authToken", response.token);
-      }
-      if (response.user) {
-        localStorage.setItem("authUser", JSON.stringify(response.user));
+      if (response.token && response.user) {
+        setSession(response.token, response.user);
       }
 
       navigate("/", { replace: true });

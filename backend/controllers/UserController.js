@@ -127,7 +127,7 @@ export const loginUser = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   try {
-    res.status(200).json({ user: req.user });
+    res.status(200).json({ user: sanitizeUser(req.user) });
   } catch (error) {
     console.error("getProfile error", error);
     res.status(500).json({ message: "Unable to fetch profile" });
@@ -136,6 +136,10 @@ export const getProfile = async (req, res) => {
 
 export const inviteUser = async (req, res) => {
   try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Only admins can invite teammates" });
+    }
+
     const { email, name, role, phone } = req.body;
 
     if (!email || !role) {
