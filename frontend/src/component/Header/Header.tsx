@@ -16,6 +16,7 @@ import {
   Bell,
   Search,
   Sparkles,
+  UserPlus,
 } from "lucide-react";
 
 const Header: React.FC = () => {
@@ -39,6 +40,7 @@ const Header: React.FC = () => {
     { path: "/boq", icon: FileText, label: "BOQ" },
     { path: "/expenses", icon: TrendingUp, label: "Expenses" },
     { path: "/feed", icon: Rss, label: "Feed" },
+    { path: "/invite", icon: UserPlus, label: "Invite" },
   ];
 
   const isActive = (path: string) => {
