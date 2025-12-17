@@ -2,10 +2,8 @@ import React, { useState } from "react";
 import {
   Plus,
   Search,
-  Filter,
   Download,
   TrendingUp,
-  TrendingDown,
   Calendar,
   Receipt,
   MoreVertical,

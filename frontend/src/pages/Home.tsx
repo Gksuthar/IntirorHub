@@ -6,10 +6,8 @@ import {
   Users,
   FileText,
   Clock,
-  ArrowUpRight,
   CheckCircle2,
   AlertCircle,
-  MoreHorizontal,
   Zap,
   Target,
   Calendar,
@@ -215,7 +213,7 @@ const Home: React.FC = () => {
             </div>
           </div>
           <div className="divide-y divide-gray-100">
-            {recentActivities.map((activity, index) => (
+            {recentActivities.map((activity) => (
               <div key={activity.id} className="p-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent transition-all duration-300 cursor-pointer group">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">

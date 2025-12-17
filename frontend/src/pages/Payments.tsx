@@ -11,7 +11,6 @@ import {
   IndianRupee,
   Calendar,
   User,
-  FileText,
 } from "lucide-react";
 
 interface Payment {

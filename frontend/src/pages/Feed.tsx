@@ -8,7 +8,6 @@ import {
   MoreHorizontal,
   Camera,
   Paperclip,
-  Filter,
 } from "lucide-react";
 
 interface FeedItem {
