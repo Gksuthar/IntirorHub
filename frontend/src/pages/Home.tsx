@@ -92,7 +92,7 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-20 pb-24 lg:pb-12 px-4 sm:px-6 md:px-8 bg-gray-50">
+    <div className="min-h-screen pt-16 sm:pt-20 pb-24 lg:pb-12 px-4 sm:px-6 md:px-8 bg-white">
       <div className="max-w-xl mx-auto">
         {/* Last Updated */}
         <p className="text-xs text-slate-400 mb-4 text-center sm:text-left">Last updated 8 minutes ago</p>

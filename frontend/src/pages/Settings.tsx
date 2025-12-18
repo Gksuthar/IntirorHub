@@ -9,7 +9,7 @@ const Settings: React.FC = () => {
   const isAdmin = user?.role === "ADMIN";
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+    <div className="min-h-screen bg-white p-4 sm:p-6">
       <div className="w-full max-w-4xl mx-auto bg-white rounded-xl shadow-md p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
           <div>

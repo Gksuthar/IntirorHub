@@ -85,7 +85,7 @@ const FeedDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 px-4 pb-10 pt-24 md:px-6">
+      <div className="min-h-screen bg-white px-4 pb-10 pt-24 md:px-6">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -97,7 +97,7 @@ const FeedDetail: React.FC = () => {
 
   if (error || !feedItem) {
     return (
-      <div className="min-h-screen bg-gray-50 px-4 pb-10 pt-24 md:px-6">
+      <div className="min-h-screen bg-white px-4 pb-10 pt-24 md:px-6">
         <div className="mx-auto max-w-4xl">
           <button
             onClick={() => navigate(-1)}
@@ -115,7 +115,7 @@ const FeedDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 pb-10 pt-24 md:px-6">
+    <div className="min-h-screen bg-white px-4 pb-10 pt-24 md:px-6">
       <div className="mx-auto max-w-4xl">
         {/* Back Button */}
         <button

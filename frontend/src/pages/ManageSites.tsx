@@ -12,7 +12,7 @@ const ManageSites: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-md p-6 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Building2 className="h-8 w-8 text-red-600" />

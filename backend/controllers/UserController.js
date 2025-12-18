@@ -41,6 +41,12 @@ export const registerAdmin = async (req, res) => {
       return res.status(409).json({ message: "Phone number already exists" });
     }
 
+    // Check if company name is already registered
+    const existingCompany = await userModel.findOne({ companyName: companyName.trim(), role: "ADMIN" });
+    if (existingCompany) {
+      return res.status(409).json({ message: "Company name is already registered" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOtp();
     const otpHash = await bcrypt.hash(otp, 10);
@@ -189,6 +195,11 @@ export const inviteUser = async (req, res) => {
 
 export const listCompanyUsers = async (req, res) => {
   try {
+    // Allow ADMIN, MANAGER, and AGENT to view user listing
+    if (!["ADMIN", "MANAGER", "AGENT"].includes(req.user.role)) {
+      return res.status(403).json({ message: "You don't have permission to view users" });
+    }
+
     const members = await userModel
       .find({ companyName: req.user.companyName })
       .select("name email role companyName createdAt");

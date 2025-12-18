@@ -119,7 +119,7 @@ const Payments: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-24 pb-8 px-4 md:px-6">
+    <div className="min-h-screen bg-white pt-24 pb-8 px-4 md:px-6">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
