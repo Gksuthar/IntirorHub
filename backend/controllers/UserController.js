@@ -103,17 +103,6 @@ export const loginUser = async (req, res) => {
 
     const token = buildToken(user._id);
 
-    if (user.role === "ADMIN") {
-      await sendPasswordEmail({
-        to: user.email,
-        name: user.name || user.companyName,
-        password,
-        companyName: user.companyName,
-        role: user.role,
-        context: "login",
-      });
-    }
-
     res.status(200).json({
       message: "Login successful",
       token,

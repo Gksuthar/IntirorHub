@@ -14,8 +14,14 @@ const sanitizeSite = (siteDoc) => {
 export const listSites = async (req, res) => {
   try {
     const userId = req.user._id;
+    const parentId = req.user.parentId;
 
-    const sites = await Site.find({ userId }).sort({ createdAt: -1 });
+    // Find sites created by user OR their parent (if they have one)
+    const query = parentId 
+      ? { $or: [{ userId }, { userId: parentId }] }
+      : { userId };
+
+    const sites = await Site.find(query).sort({ createdAt: -1 });
 
     const payload = sites.map(sanitizeSite);
 
@@ -28,10 +34,6 @@ export const listSites = async (req, res) => {
 
 export const createSite = async (req, res) => {
   try {
-    if (req.user.role !== "ADMIN") {
-      return res.status(403).json({ message: "Only admins can create sites" });
-    }
-
     const { name, description, image } = req.body;
 
     if (!name || !name.trim()) {

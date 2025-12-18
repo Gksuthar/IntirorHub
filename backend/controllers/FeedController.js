@@ -43,7 +43,12 @@ export const listFeed = async (req, res) => {
       return res.status(400).json({ message: "Invalid siteId" });
     }
 
-    const site = await Site.findOne({ _id: siteId, userId: req.user._id });
+    // Allow access to sites created by user OR their parent
+    const query = req.user.parentId
+      ? { _id: siteId, $or: [{ userId: req.user._id }, { userId: req.user.parentId }] }
+      : { _id: siteId, userId: req.user._id };
+
+    const site = await Site.findOne(query);
     if (!site) {
       return res.status(404).json({ message: "Site not found" });
     }
@@ -76,7 +81,12 @@ export const createFeedItem = async (req, res) => {
       return res.status(400).json({ message: "Invalid siteId" });
     }
 
-    const site = await Site.findOne({ _id: siteId, userId: req.user._id });
+    // Allow posting to sites created by user OR their parent
+    const query = req.user.parentId
+      ? { _id: siteId, $or: [{ userId: req.user._id }, { userId: req.user.parentId }] }
+      : { _id: siteId, userId: req.user._id };
+
+    const site = await Site.findOne(query);
     if (!site) {
       return res.status(404).json({ message: "Site not found" });
     }
@@ -138,7 +148,16 @@ export const getFeedItem = async (req, res) => {
       .populate("createdBy", "name email role companyName")
       .populate("site", "name userId");
 
-    if (!item || !item.site || item.site.userId.toString() !== req.user._id.toString()) {
+    if (!item || !item.site) {
+      return res.status(404).json({ message: "Feed item not found" });
+    }
+
+    // Check if user owns the site or their parent owns it
+    const siteUserId = item.site.userId.toString();
+    const hasAccess = siteUserId === req.user._id.toString() || 
+                      (req.user.parentId && siteUserId === req.user.parentId.toString());
+
+    if (!hasAccess) {
       return res.status(404).json({ message: "Feed item not found" });
     }
 

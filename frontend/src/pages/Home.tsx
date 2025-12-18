@@ -1,4 +1,5 @@
 import React from "react";
+import { useSite } from "../context/SiteContext";
 import {
   TrendingUp,
   TrendingDown,
@@ -16,7 +17,8 @@ import {
 } from "lucide-react";
 
 const Home: React.FC = () => {
-     const progress = 62;
+  useSite();
+  const progress = 62;
   const daysLeft = 68;
 
   const stats = [

@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { authApi, ApiError, type UserRole } from "../services/api";
-import { Mail, User, Phone, Shield, Loader2 } from "lucide-react";
+import { authApi, ApiError, type UserRole, userApi } from "../services/api";
+import { Mail, User, Phone, Shield, Loader2, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+
+interface CompanyUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string;
+}
 
 const roles: Array<{ value: Exclude<UserRole, "ADMIN">; label: string; description: string }> = [
   { value: "MANAGER", label: "Manager", description: "Project management" },
@@ -22,6 +30,8 @@ const Invite: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [projectUsers, setProjectUsers] = useState<CompanyUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   useEffect(() => {
     if (authLoading) {
@@ -37,6 +47,33 @@ const Invite: React.FC = () => {
       navigate("/", { replace: true });
     }
   }, [authLoading, navigate, token, user]);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (!token) {
+        return;
+      }
+
+      setLoadingUsers(true);
+      try {
+        const response = await userApi.listUsers(token);
+        const users: CompanyUser[] = response.users.map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          avatar: u.avatar,
+        }));
+        setProjectUsers(users);
+      } catch (err) {
+        console.error("listUsers error", err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    loadUsers();
+  }, [token]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
@@ -97,6 +134,8 @@ const Invite: React.FC = () => {
             {success}
           </div>
         )}
+
+   
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
           <div className="grid gap-6 md:grid-cols-2">
@@ -183,6 +222,54 @@ const Invite: React.FC = () => {
             )}
           </button>
         </form>
+             {/* Project Team Section */}
+        <div className="mt-8 rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center gap-3 p-6 border-b border-gray-100">
+            <Users className="h-6 w-6 text-gray-600" />
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Project Team</h2>
+              <p className="text-sm text-gray-500">
+                {projectUsers.length} {projectUsers.length === 1 ? "Member" : "Members"}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {loadingUsers ? (
+              <div className="py-8 text-center text-sm text-gray-500">
+                Loading team members...
+              </div>
+            ) : projectUsers.length === 0 ? (
+              <div className="py-8 text-center text-sm text-gray-500">
+                No team members found.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {projectUsers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4"
+                  >
+                    <img
+                      src={member.avatar}
+                      alt={member.name}
+                      className="h-12 w-12 rounded-full"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-gray-900">
+                        {member.name}
+                      </p>
+                      <p className="truncate text-xs text-gray-500">{member.email}</p>
+                      <span className="mt-1 inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-semibold uppercase text-white">
+                        {member.role}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
