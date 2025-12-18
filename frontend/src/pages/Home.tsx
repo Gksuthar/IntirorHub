@@ -3,10 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
 import { feedApi } from "../services/api";
-import {
-  FileText,
-  IndianRupee,
-} from "lucide-react";
 
 interface FeedItem {
   id: string;
