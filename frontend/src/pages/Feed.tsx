@@ -415,7 +415,7 @@ const Feed: React.FC = () => {
                       )}
 
                       <div className="mt-3">
-                        <p className="text-sm text-gray-800 break-words overflow-wrap-anywhere">
+                        <p className="text-sm text-gray-800 break-all whitespace-pre-wrap">
                           {item.content.length > 200
                             ? `${item.content.slice(0, 200)}...`
                             : item.content}
