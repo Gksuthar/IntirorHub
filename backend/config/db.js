@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const DBURL = process.env.MONGODB_URL || "mongodb+srv://rahul:rahul@cluster0.nv076.mongodb.net/IntHub?retryWrites=true&w=majority&appName=Cluster0"
+const DBURL = process.env.MONGODB_URL;
 const connectDB = async () => {
     try {
         if (!DBURL) {
