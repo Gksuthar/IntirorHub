@@ -1,5 +1,6 @@
 type FilterKey = "all" | "updates" | "photos" | "documents" | "milestones";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MessageSquare,
   Image,
@@ -13,10 +14,13 @@ import {
   MapPin,
   Clock,
   X,
+  Users,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSite } from "../context/SiteContext";
-import { feedApi } from "../services/api";
+import { feedApi, userApi } from "../services/api";
 
 interface FeedItem {
   id: string;
@@ -32,6 +36,14 @@ interface FeedItem {
   likes: number;
   comments: number;
   siteName?: string;
+}
+
+interface CompanyUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string;
 }
 
 const initialFeedItems: FeedItem[] = [];
@@ -52,6 +64,7 @@ const generateId = () =>
 const Feed: React.FC = () => {
   const { user, token } = useAuth();
   const { activeSite, sites, openCreateSite } = useSite();
+  const navigate = useNavigate();
   const [newPost, setNewPost] = useState("");
   const [selectedImages, setSelectedImages] = useState<Array<{ id: string; src: string; name: string }>>([]);
   const [feedItems, setFeedItems] = useState<FeedItem[]>(initialFeedItems);
@@ -59,6 +72,9 @@ const Feed: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [projectUsers, setProjectUsers] = useState<CompanyUser[]>([]);
+  const [showUserList, setShowUserList] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const avatarSeed = encodeURIComponent(user?.email || user?.name || "You");
@@ -214,6 +230,33 @@ const Feed: React.FC = () => {
     loadFeed();
   }, [activeSiteId, token]);
 
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (!token) {
+        return;
+      }
+
+      setLoadingUsers(true);
+      try {
+        const response = await userApi.listUsers(token);
+        const users: CompanyUser[] = response.users.map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          avatar: u.avatar,
+        }));
+        setProjectUsers(users);
+      } catch (err) {
+        console.error("listUsers error", err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    loadUsers();
+  }, [token]);
+
   const getTypeIcon = (type: FeedItem["type"]) => {
         switch (type) {
           case "photo":
@@ -356,20 +399,20 @@ const Feed: React.FC = () => {
                   )}
                   {filteredItems.map((item) => (
                     <div key={item.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
                           <img
                             src={item.user.avatar}
                             alt={item.user.name}
-                            className="h-10 w-10 rounded-full"
+                            className="h-10 w-10 flex-shrink-0 rounded-full"
                           />
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-900">{item.user.name}</span>
+                              <span className="font-semibold text-gray-900 truncate">{item.user.name}</span>
                               {getTypeIcon(item.type)}
                             </div>
-                            <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                              <span>{item.user.role}</span>
+                            <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                              <span className="truncate">{item.user.role}</span>
                               <span>•</span>
                               <span className="inline-flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
@@ -377,19 +420,17 @@ const Feed: React.FC = () => {
                               </span>
                             </div>
                             {item.siteName && (
-                              <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">
-                                <MapPin className="h-3 w-3" />
-                                {item.siteName}
+                              <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600 max-w-full">
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{item.siteName}</span>
                               </div>
                             )}
                           </div>
                         </div>
-                        <button className="rounded-full p-1 text-gray-400 transition hover:bg-gray-100">
+                        <button className="rounded-full p-1 text-gray-400 transition hover:bg-gray-100 flex-shrink-0">
                           <MoreHorizontal className="h-5 w-5" />
                         </button>
                       </div>
-
-                      <p className="mt-3 text-sm text-gray-800">{item.content}</p>
 
                       {item.images && item.images.length > 0 && (
                         <div
@@ -405,6 +446,22 @@ const Feed: React.FC = () => {
                           ))}
                         </div>
                       )}
+
+                      <div className="mt-3">
+                        <p className="text-sm text-gray-800 break-words overflow-wrap-anywhere">
+                          {item.content.length > 200
+                            ? `${item.content.slice(0, 200)}...`
+                            : item.content}
+                        </p>
+                        {item.content.length > 200 && (
+                          <button
+                            onClick={() => navigate(`/feed/${item.id}`)}
+                            className="mt-2 text-sm font-medium text-gray-900 hover:underline"
+                          >
+                            Read more
+                          </button>
+                        )}
+                      </div>
 
                       <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
                         <div className="flex items-center gap-4">
@@ -470,6 +527,68 @@ const Feed: React.FC = () => {
                     >
                       Create new site
                     </button>
+                  )}
+                </div>
+
+                {/* Project Users */}
+                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowUserList(!showUserList)}
+                    className="flex w-full items-center justify-between p-6 text-left transition hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Users className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Project Team</p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {projectUsers.length} {projectUsers.length === 1 ? "Member" : "Members"}
+                        </p>
+                      </div>
+                    </div>
+                    {showUserList ? (
+                      <ChevronUp className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
+
+                  {showUserList && (
+                    <div className="border-t border-gray-100 px-6 pb-6">
+                      {loadingUsers ? (
+                        <div className="py-4 text-center text-sm text-gray-500">
+                          Loading team members...
+                        </div>
+                      ) : projectUsers.length === 0 ? (
+                        <div className="py-4 text-center text-sm text-gray-500">
+                          No team members found.
+                        </div>
+                      ) : (
+                        <div className="mt-4 space-y-3">
+                          {projectUsers.map((member) => (
+                            <div
+                              key={member.id}
+                              className="flex items-center gap-3 rounded-xl bg-gray-50 p-3"
+                            >
+                              <img
+                                src={member.avatar}
+                                alt={member.name}
+                                className="h-10 w-10 rounded-full"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-gray-900">
+                                  {member.name}
+                                </p>
+                                <p className="truncate text-xs text-gray-500">{member.email}</p>
+                              </div>
+                              <span className="rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-semibold uppercase text-white">
+                                {member.role}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 

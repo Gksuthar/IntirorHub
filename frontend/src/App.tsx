@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Invite from "./pages/Invite";
 import ManageSites from "./pages/ManageSites";
+import FeedDetail from "./pages/FeedDetail";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SiteProvider } from "./context/SiteContext";
 
@@ -74,6 +75,7 @@ function App() {
               <Route path="boq" element={<BOQ />} />
               <Route path="expenses" element={<Expenses />} />
               <Route path="feed" element={<Feed />} />
+              <Route path="feed/:id" element={<FeedDetail />} />
               <Route path="manage-sites" element={<ManageSites />} />
               <Route
                 path="invite"

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
-import SiteSidebar from "../SiteSidebar";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Building2,
@@ -12,10 +11,10 @@ import {
   X,
   LogOut,
   User,
-  Bell,
   Search,
   Sparkles,
   UserPlus,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useSite } from "../../context/SiteContext";
@@ -24,10 +23,10 @@ const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // Removed unused isProjectDropdownOpen
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isSiteSidebarOpen, setIsSiteSidebarOpen] = useState(false);
+  const [isSiteMenuOpen, setIsSiteMenuOpen] = useState(false);
+  const siteMenuRef = useRef<HTMLDivElement | null>(null);
   const { user, logout } = useAuth();
   const { sites, activeSite, setActiveSite, openCreateSite } = useSite();
   const isAdmin = user?.role === "ADMIN";
@@ -74,13 +73,31 @@ const Header: React.FC = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsProfileDropdownOpen(false);
-    // Removed setIsProjectDropdownOpen(false)
+    setIsSiteMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (siteMenuRef.current && !siteMenuRef.current.contains(event.target as Node)) {
+        setIsSiteMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
   };
+
+  const handleSiteSelect = (siteId: string) => {
+    setActiveSite(siteId);
+    setIsSiteMenuOpen(false);
+  };
+
+  const activeSiteName = activeSite?.name ?? "Select a site";
 
   return (
     <header 
@@ -130,6 +147,102 @@ const Header: React.FC = () => {
 
           {/* Right Section */}
           <div className="flex items-center gap-2 md:gap-4">
+            {/* Active Site Dropdown */}
+            <div className="relative" ref={siteMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsSiteMenuOpen((prev) => !prev)}
+                className="flex items-center gap-3 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300"
+              >
+                <div className="text-left">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                    Active Site
+                  </span>
+                  <span className="block text-sm font-semibold text-gray-800 max-w-[150px] truncate sm:max-w-[180px]">
+                    {activeSiteName}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 text-gray-500 transition-transform ${isSiteMenuOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {isSiteMenuOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl shadow-gray-200/60 border border-gray-100 py-2 z-40">
+                  <div className="px-4 pb-2 border-b border-gray-100">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Select a site</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {activeSiteName}
+                    </p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto py-1">
+                    {sites.length ? (
+                      sites.map((site) => {
+                        const initials = site.name
+                          .split(" ")
+                          .map((part) => part.charAt(0))
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase();
+                        const isActiveSite = activeSite?.id === site.id;
+                        return (
+                          <button
+                            type="button"
+                            key={site.id}
+                            onClick={() => handleSiteSelect(site.id)}
+                            className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ${
+                              isActiveSite ? "bg-gray-100 text-gray-900" : "hover:bg-gray-50 text-gray-700"
+                            }`}
+                          >
+                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-sm font-semibold text-gray-600">
+                              {initials || "?"}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold truncate">{site.name}</p>
+                              {site.description && (
+                                <p className="text-xs text-gray-500 truncate">{site.description}</p>
+                              )}
+                            </div>
+                            {isActiveSite && (
+                              <span className="text-[10px] font-semibold uppercase text-[#1a1a1a]">Active</span>
+                            )}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="px-4 py-6 text-center text-sm text-gray-500">
+                        No sites available yet.
+                      </div>
+                    )}
+                  </div>
+                  <div className="border-t border-gray-100 pt-1 pb-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSiteMenuOpen(false);
+                        navigate("/manage-sites");
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <Building2 className="h-4 w-4 text-gray-500" />
+                      <span>Open Manage Sites</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSiteMenuOpen(false);
+                        openCreateSite();
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <Sparkles className="h-4 w-4 text-gray-500" />
+                      <span>Create new site</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Search Button */}
             <button className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300">
               <Search className="h-4 w-4 text-gray-400" />
@@ -139,14 +252,7 @@ const Header: React.FC = () => {
               </kbd>
             </button>
 
-            {/* Notifications */}
-            <button className="relative p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300">
-              <Bell className="h-5 w-5 text-gray-600" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-            </button>
-
-            {/* Project Dropdown removed as per request */}
-
+         
             {/* Profile Dropdown */}
             <div className="relative">
               <button
@@ -261,19 +367,6 @@ const Header: React.FC = () => {
           </nav>
         </div>
       )}
-
-      {/* Site Management Sidebar */}
-      <SiteSidebar
-        isOpen={isSiteSidebarOpen}
-        onClose={() => setIsSiteSidebarOpen(false)}
-        sites={sites}
-        activeSiteId={activeSite?.id}
-        onSwitchSite={(siteId) => setActiveSite(siteId)}
-        onCreateSite={() => {
-          setIsSiteSidebarOpen(false);
-          openCreateSite();
-        }}
-      />
     </header>
   );
 };

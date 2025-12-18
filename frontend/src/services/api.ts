@@ -71,6 +71,15 @@ export interface FeedItemDto {
   user: FeedUserDto;
 }
 
+export interface CompanyUserDto {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar: string;
+  joinedAt?: string;
+}
+
 
 const buildHeaders = (token?: string, hasBody = false): HeadersInit => {
   const headers: HeadersInit = {};
@@ -210,6 +219,14 @@ export const userApi = {
       body,
       token,
     }),
+
+  listUsers: (token: string) =>
+    request<{
+      users: CompanyUserDto[];
+    }>("/users", {
+      method: "GET",
+      token,
+    }),
 };
 
 export const siteApi = {
@@ -262,6 +279,14 @@ export const feedApi = {
     }>("/feed", {
       method: "POST",
       body,
+      token,
+    }),
+
+  getFeedItem: (id: string, token: string) =>
+    request<{
+      item: FeedItemDto;
+    }>(`/feed/${id}`, {
+      method: "GET",
       token,
     }),
 };
