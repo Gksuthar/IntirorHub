@@ -14,13 +14,10 @@ import {
   MapPin,
   Clock,
   X,
-  Users,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSite } from "../context/SiteContext";
-import { feedApi, userApi } from "../services/api";
+import { feedApi } from "../services/api";
 
 interface FeedItem {
   id: string;
@@ -36,14 +33,6 @@ interface FeedItem {
   likes: number;
   comments: number;
   siteName?: string;
-}
-
-interface CompanyUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar: string;
 }
 
 const initialFeedItems: FeedItem[] = [];
@@ -72,15 +61,13 @@ const Feed: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [projectUsers, setProjectUsers] = useState<CompanyUser[]>([]);
-  const [showUserList, setShowUserList] = useState(false);
-  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [siteError, setSiteError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const avatarSeed = encodeURIComponent(user?.email || user?.name || "You");
   const isAdmin = user?.role === "ADMIN";
   const activeSiteId = activeSite?.id ?? null;
-  const isPostDisabled = (!newPost.trim() && selectedImages.length === 0) || !activeSiteId || isSubmitting;
+  const isPostDisabled = (!newPost.trim() && selectedImages.length === 0) || isSubmitting;
 
   const filters: Array<{ key: FilterKey; label: string }> = useMemo(
         () => [
@@ -147,53 +134,53 @@ const Feed: React.FC = () => {
       };
 
   const handleSubmitPost = async () => {
-        const content = newPost.trim();
-        if (!content && selectedImages.length === 0) {
-          return;
-        }
-
-        if (!token || !activeSiteId) {
-          return;
-        }
-
-        setIsSubmitting(true);
-        try {
-          const response = await feedApi.createFeed(
-            {
-              siteId: activeSiteId,
-              content,
-              images: selectedImages.map((image) => image.src),
-            },
-            token
-          );
-
-          const created = response.item;
-
-          const newItem: FeedItem = {
-            id: created.id,
-            user: created.user,
-            type: created.type,
-            content: created.content,
-            images: created.images,
-            timestamp: created.timestamp,
-            likes: created.likes,
-            comments: created.comments,
-            siteName: created.siteName,
-          };
-
-          setFeedItems((prev) => [newItem, ...prev]);
-          setNewPost("");
-          setSelectedImages([]);
-          setActiveFilter("all");
-          if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-          }
-        } catch (err) {
-          console.error("createFeed error", err);
-        } finally {
-          setIsSubmitting(false);
-        }
+    const content = newPost.trim();
+    setSiteError(null);
+    if (!content && selectedImages.length === 0) {
+      return;
+    }
+    if (!activeSiteId) {
+      setSiteError("Please select a site before posting a feed.");
+      return;
+    }
+    if (!token) {
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const response = await feedApi.createFeed(
+        {
+          siteId: activeSiteId,
+          content,
+          images: selectedImages.map((image) => image.src),
+        },
+        token
+      );
+      const created = response.item;
+      const newItem: FeedItem = {
+        id: created.id,
+        user: created.user,
+        type: created.type,
+        content: created.content,
+        images: created.images,
+        timestamp: created.timestamp,
+        likes: created.likes,
+        comments: created.comments,
+        siteName: created.siteName,
       };
+      setFeedItems((prev) => [newItem, ...prev]);
+      setNewPost("");
+      setSelectedImages([]);
+      setActiveFilter("all");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (err) {
+      console.error("createFeed error", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const loadFeed = async () => {
@@ -230,33 +217,6 @@ const Feed: React.FC = () => {
     loadFeed();
   }, [activeSiteId, token]);
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      if (!token) {
-        return;
-      }
-
-      setLoadingUsers(true);
-      try {
-        const response = await userApi.listUsers(token);
-        const users: CompanyUser[] = response.users.map((u) => ({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          role: u.role,
-          avatar: u.avatar,
-        }));
-        setProjectUsers(users);
-      } catch (err) {
-        console.error("listUsers error", err);
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-
-    loadUsers();
-  }, [token]);
-
   const getTypeIcon = (type: FeedItem["type"]) => {
         switch (type) {
           case "photo":
@@ -280,28 +240,33 @@ const Feed: React.FC = () => {
     : null;
 
   return (
-        <div className="min-h-screen bg-gray-50 px-4 pb-10 pt-24 md:px-6">
+        <div className="min-h-screen bg-gray-50 px-2 pb-20 pt-16 sm:px-4 md:px-6 md:pb-10 md:pt-24">
           <div className="mx-auto max-w-6xl">
-            <div className="mb-8 flex flex-col gap-2">
-              <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">Feed</h1>
-              <p className="text-sm text-gray-600">Stay updated with project activities and updates</p>
+            <div className="mb-3 flex flex-col gap-1 sm:mb-8 sm:gap-2">
+              <h1 className="text-lg font-bold text-gray-900 sm:text-2xl md:text-3xl">Feed</h1>
+              <p className="text-xs text-gray-600 sm:text-sm">Stay updated with project activities and updates</p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr),minmax(280px,1fr)]">
-              <div className="space-y-6">
-                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,2fr),minmax(280px,1fr)]">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-5">
+                  {siteError && (
+                    <div className="mb-3 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">
+                      {siteError}
+                    </div>
+                  )}
                   <div className="flex items-start gap-3">
                     <img
                       src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`}
                       alt="User avatar"
                       className="h-10 w-10 rounded-full"
                     />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <textarea
                         value={newPost}
                         onChange={(event) => setNewPost(event.target.value)}
                         placeholder="Share an update..."
-                        className="h-28 w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
+                        className="h-24 w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-black focus:ring-2 focus:ring-black/10 sm:h-28 sm:rounded-xl sm:px-4 sm:py-3"
                       />
 
                       {selectedImages.length > 0 && (
@@ -324,8 +289,8 @@ const Feed: React.FC = () => {
                         </div>
                       )}
 
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
+                      <div className="mt-3 flex flex-col items-stretch gap-3 sm:mt-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2 overflow-x-auto">
                           <input
                             ref={fileInputRef}
                             type="file"
@@ -337,27 +302,29 @@ const Feed: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center gap-2 rounded-xl border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-400 hover:text-gray-900"
+                            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-400 hover:text-gray-900 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm"
                           >
-                            <Camera className="h-4 w-4" />
-                            Add photos
+                            <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden xs:inline">Add photos</span>
+                            <span className="xs:hidden">Photos</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center gap-2 rounded-xl border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-400 hover:text-gray-900"
+                            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-400 hover:text-gray-900 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm"
                           >
-                            <Paperclip className="h-4 w-4" />
-                            Attach file
+                            <Paperclip className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden xs:inline">Attach file</span>
+                            <span className="xs:hidden">File</span>
                           </button>
                         </div>
                         <button
                           type="button"
                           onClick={handleSubmitPost}
                           disabled={isPostDisabled}
-                          className="flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-black/40"
+                          className="flex items-center justify-center gap-2 rounded-lg bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-black/40 sm:rounded-xl sm:text-sm sm:tracking-[0.3em]"
                         >
-                          <Send className="h-4 w-4" />
+                          <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           Post
                         </button>
                       </div>
@@ -365,12 +332,12 @@ const Feed: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
                   {filters.map((filter) => (
                     <button
                       key={filter.key}
                       onClick={() => setActiveFilter(filter.key)}
-                      className={`px-4 py-2 text-sm font-medium transition ${
+                      className={`whitespace-nowrap px-3 py-1.5 text-xs font-medium transition sm:px-4 sm:py-2 sm:text-sm ${
                         activeFilter === filter.key
                           ? "rounded-full bg-black text-white"
                           : "rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-100"
@@ -398,7 +365,7 @@ const Feed: React.FC = () => {
                     </div>
                   )}
                   {filteredItems.map((item) => (
-                    <div key={item.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                    <div key={item.id} className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-start gap-3 min-w-0 flex-1">
                           <img
@@ -527,68 +494,6 @@ const Feed: React.FC = () => {
                     >
                       Create new site
                     </button>
-                  )}
-                </div>
-
-                {/* Project Users */}
-                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setShowUserList(!showUserList)}
-                    className="flex w-full items-center justify-between p-6 text-left transition hover:bg-gray-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Users className="h-5 w-5 text-gray-600" />
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Project Team</p>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {projectUsers.length} {projectUsers.length === 1 ? "Member" : "Members"}
-                        </p>
-                      </div>
-                    </div>
-                    {showUserList ? (
-                      <ChevronUp className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-gray-400" />
-                    )}
-                  </button>
-
-                  {showUserList && (
-                    <div className="border-t border-gray-100 px-6 pb-6">
-                      {loadingUsers ? (
-                        <div className="py-4 text-center text-sm text-gray-500">
-                          Loading team members...
-                        </div>
-                      ) : projectUsers.length === 0 ? (
-                        <div className="py-4 text-center text-sm text-gray-500">
-                          No team members found.
-                        </div>
-                      ) : (
-                        <div className="mt-4 space-y-3">
-                          {projectUsers.map((member) => (
-                            <div
-                              key={member.id}
-                              className="flex items-center gap-3 rounded-xl bg-gray-50 p-3"
-                            >
-                              <img
-                                src={member.avatar}
-                                alt={member.name}
-                                className="h-10 w-10 rounded-full"
-                              />
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-semibold text-gray-900">
-                                  {member.name}
-                                </p>
-                                <p className="truncate text-xs text-gray-500">{member.email}</p>
-                              </div>
-                              <span className="rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-semibold uppercase text-white">
-                                {member.role}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                   )}
                 </div>
 
