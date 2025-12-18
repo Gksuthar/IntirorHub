@@ -26,6 +26,12 @@ const SiteSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true,

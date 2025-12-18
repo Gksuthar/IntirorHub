@@ -13,9 +13,9 @@ const sanitizeSite = (siteDoc) => {
 
 export const listSites = async (req, res) => {
   try {
-    const companyName = req.user.companyName;
+    const userId = req.user._id;
 
-    const sites = await Site.find({ companyName }).sort({ createdAt: -1 });
+    const sites = await Site.find({ userId }).sort({ createdAt: -1 });
 
     const payload = sites.map(sanitizeSite);
 
@@ -44,6 +44,7 @@ export const createSite = async (req, res) => {
       image: image || undefined,
       companyName: req.user.companyName,
       createdBy: req.user._id,
+      userId: req.user._id,
     });
 
     return res.status(201).json({

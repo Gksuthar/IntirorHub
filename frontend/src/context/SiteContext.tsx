@@ -29,12 +29,6 @@ const SiteContext = createContext<SiteContextValue | undefined>(undefined);
 
 const buildStorageKey = (userKey: string, suffix = "sites") => `sitezero:${userKey}:${suffix}`;
 
-const createDefaultSite = (name: string): Site => ({
-  id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`,
-  name,
-  description: "Primary workspace",
-  createdAt: new Date().toISOString(),
-});
 
 export const SiteProvider = ({ children }: { children: ReactNode }) => {
   const { user, token } = useAuth();
@@ -69,25 +63,21 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
           createdAt: site.createdAt,
         }));
 
-        const normalizedSites = apiSites.length
-          ? apiSites
-          : [createDefaultSite(user.companyName || "Primary workspace")];
-
-        setSites(normalizedSites);
+        setSites(apiSites);
 
         if (activeKey) {
           const storedActive = localStorage.getItem(activeKey);
-          const initialActive =
-            normalizedSites.find((site) => site.id === storedActive)?.id || normalizedSites[0].id;
+          const initialActive = apiSites.length > 0
+            ? (apiSites.find((site) => site.id === storedActive)?.id || apiSites[0].id)
+            : null;
           setActiveSiteId(initialActive);
         } else {
-          setActiveSiteId(normalizedSites[0]?.id ?? null);
+          setActiveSiteId(apiSites[0]?.id ?? null);
         }
       } catch (error) {
         console.warn("Unable to load sites from API", error);
-        const fallback = [createDefaultSite(user?.companyName || "Primary workspace")];
-        setSites(fallback);
-        setActiveSiteId(fallback[0].id);
+        setSites([]);
+        setActiveSiteId(null);
       }
     };
 

@@ -43,13 +43,12 @@ export const listFeed = async (req, res) => {
       return res.status(400).json({ message: "Invalid siteId" });
     }
 
-    const site = await Site.findOne({ _id: siteId, companyName: req.user.companyName });
+    const site = await Site.findOne({ _id: siteId, userId: req.user._id });
     if (!site) {
       return res.status(404).json({ message: "Site not found" });
     }
 
     const items = await Feed.find({
-      companyName: req.user.companyName,
       site: site._id,
     })
       .sort({ createdAt: -1 })
@@ -77,7 +76,7 @@ export const createFeedItem = async (req, res) => {
       return res.status(400).json({ message: "Invalid siteId" });
     }
 
-    const site = await Site.findOne({ _id: siteId, companyName: req.user.companyName });
+    const site = await Site.findOne({ _id: siteId, userId: req.user._id });
     if (!site) {
       return res.status(404).json({ message: "Site not found" });
     }
@@ -135,11 +134,11 @@ export const getFeedItem = async (req, res) => {
       return res.status(400).json({ message: "Invalid feed id" });
     }
 
-    const item = await Feed.findOne({ _id: id, companyName: req.user.companyName })
+    const item = await Feed.findOne({ _id: id })
       .populate("createdBy", "name email role companyName")
-      .populate("site", "name");
+      .populate("site", "name userId");
 
-    if (!item) {
+    if (!item || !item.site || item.site.userId.toString() !== req.user._id.toString()) {
       return res.status(404).json({ message: "Feed item not found" });
     }
 
