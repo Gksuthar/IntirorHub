@@ -100,7 +100,7 @@ const Home: React.FC = () => {
         {/* Main Card */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 mb-4 shadow-sm">
           {/* Top Section with Progress Circle */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 mb-8">
+          <div className="flex items-start gap-6 sm:gap-8 mb-8">
             {/* Circular Progress */}
             <div className="flex-shrink-0">
               <div className="relative w-28 h-28 sm:w-32 sm:h-32">
@@ -133,7 +133,7 @@ const Home: React.FC = () => {
             </div>
 
             {/* Stage Info */}
-            <div className="flex-1 text-center sm:text-left">
+            <div className="flex-1">
               <div className="mb-5">
                 <p className="text-xs text-slate-400 mb-1.5">Current Stage</p>
                 <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Carpentry Work</h2>

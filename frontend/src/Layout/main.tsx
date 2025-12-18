@@ -8,10 +8,10 @@ const MainLayout = () => {
     
     const navLinks = [
         { path: "/", icon: Home, label: "Home" },
-        { path: "/payments", icon: CreditCard, label: "Payments" },
-        { path: "/boq", icon: FileText, label: "BOQ" },
-        { path: "/expenses", icon: TrendingUp, label: "Expenses" },
-        { path: "/feed", icon: Rss, label: "Feed" },
+        { path: "/home/payments", icon: CreditCard, label: "Payments" },
+        { path: "/home/boq", icon: FileText, label: "BOQ" },
+        { path: "/home/expenses", icon: TrendingUp, label: "Expenses" },
+        { path: "/home/feed", icon: Rss, label: "Feed" },
     ];
 
     const isActive = (path: string) => {
