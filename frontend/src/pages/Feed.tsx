@@ -240,7 +240,7 @@ const Feed: React.FC = () => {
     : null;
 
   return (
-        <div className="min-h-screen bg-gray-50 px-2 pb-20 pt-16 sm:px-4 md:px-6 md:pb-10 md:pt-24">
+<div className="flex items-center justify-center bg-gray-50 px-2 pb-20 pt-16 sm:px-4 md:px-6 md:pb-10 md:pt-24">
           <div className="mx-auto max-w-6xl">
             <div className="mb-3 flex flex-col gap-1 sm:mb-8 sm:gap-2">
               <h1 className="text-lg font-bold text-gray-900 sm:text-2xl md:text-3xl">Feed</h1>
