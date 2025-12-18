@@ -92,14 +92,13 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-20 pb-24 lg:pb-12 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-white to-gray-50">
-      <div className="max-w-xl mx-auto">
+    <>
+      {/* Main Card */}
+      <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-sm max-w-2xl mx-auto mt-20 mb-8">
         {/* Last Updated */}
         <p className="text-xs text-slate-400 mb-4 text-center sm:text-left">Last updated 8 minutes ago</p>
         
-        {/* Main Card */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 mb-4 shadow-sm">
-          {/* Top Section with Progress Circle */}
+        {/* Top Section with Progress Circle */}
           <div className="flex items-start gap-6 sm:gap-8 mb-8">
             {/* Circular Progress */}
             <div className="flex-shrink-0">
@@ -185,31 +184,6 @@ const Home: React.FC = () => {
               <p className="text-xs text-slate-400 mt-1">On Track</p>
             </div>
           </div>
-
-          {/* Quick Actions */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Quick Actions</h3>
-            
-            {/* Add Site Update - Full Width Dark Button */}
-            <button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-3.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm">
-              <FileText className="h-4 w-4" />
-              Add Site Update
-            </button>
-
-            {/* Two Column Buttons */}
-            <div className="grid grid-cols-2 gap-3">
-              <button className="bg-white hover:bg-slate-50 text-slate-900 font-medium py-3.5 px-3 rounded-xl border border-slate-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm">
-                <IndianRupee className="h-4 w-4" />
-                <span className="hidden sm:inline">Add Expense</span>
-                <span className="sm:hidden">Expense</span>
-              </button>
-              <button className="bg-white hover:bg-slate-50 text-slate-900 font-medium py-3.5 px-3 rounded-xl border border-slate-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Add BOQ Item</span>
-                <span className="sm:hidden">BOQ</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Recent Site Updates */}
@@ -257,8 +231,7 @@ const Home: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </>
   );
 };
 
