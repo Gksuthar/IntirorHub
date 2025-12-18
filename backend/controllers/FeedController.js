@@ -16,8 +16,10 @@ const sanitizeFeedItem = (doc) => {
   return {
     id: item._id,
     type: item.type,
+    title: item.title || "",
     content: item.content,
     images: item.images || [],
+    attachments: item.attachments || [],
     timestamp: item.createdAt,
     likes: item.likes ?? 0,
     comments: item.commentsCount ?? 0,
@@ -71,7 +73,7 @@ export const listFeed = async (req, res) => {
 
 export const createFeedItem = async (req, res) => {
   try {
-    const { siteId, content, images } = req.body;
+    const { siteId, title, content, images, attachments } = req.body;
 
     if (!siteId) {
       return res.status(400).json({ message: "siteId is required" });
@@ -91,29 +93,40 @@ export const createFeedItem = async (req, res) => {
       return res.status(404).json({ message: "Site not found" });
     }
 
+    const trimmedTitle = (title || "").trim();
     const trimmedContent = (content || "").trim();
     const normalizedImages = Array.isArray(images) ? images.filter(Boolean) : [];
+    const normalizedAttachments = Array.isArray(attachments) ? attachments.filter(Boolean) : [];
 
-    if (!trimmedContent && normalizedImages.length === 0) {
-      return res.status(400).json({ message: "Content or images are required" });
+    if (!trimmedContent && normalizedImages.length === 0 && normalizedAttachments.length === 0) {
+      return res.status(400).json({ message: "Content, images or attachments are required" });
     }
 
-    const type = normalizedImages.length > 0 ? "photo" : "update";
+    let type = "update";
+    if (normalizedImages.length > 0) {
+      type = "photo";
+    } else if (normalizedAttachments.length > 0) {
+      type = "document";
+    }
 
     const feed = await Feed.create({
       site: site._id,
       createdBy: req.user._id,
       companyName: req.user.companyName,
       type,
+      title: trimmedTitle,
       content: trimmedContent,
       images: normalizedImages,
+      attachments: normalizedAttachments,
     });
 
     const item = {
       id: feed._id,
       type,
+      title: feed.title || "",
       content: feed.content,
       images: feed.images || [],
+      attachments: feed.attachments || [],
       timestamp: feed.createdAt,
       likes: feed.likes ?? 0,
       comments: feed.commentsCount ?? 0,

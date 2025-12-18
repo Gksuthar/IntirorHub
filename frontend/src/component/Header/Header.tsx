@@ -33,12 +33,12 @@ const Header: React.FC = () => {
 
   const navLinks = useMemo(
     () => [
-      { path: "/", icon: Home, label: "Home", adminOnly: false },
-      { path: "/payments", icon: CreditCard, label: "Payments", adminOnly: false },
-      { path: "/boq", icon: FileText, label: "BOQ", adminOnly: false },
-      { path: "/expenses", icon: TrendingUp, label: "Expenses", adminOnly: false },
-      { path: "/feed", icon: Rss, label: "Feed", adminOnly: false },
-      { path: "/invite", icon: UserPlus, label: "Invite", adminOnly: true },
+      { path: "/home", icon: Home, label: "Home", adminOnly: false },
+      { path: "/home/payments", icon: CreditCard, label: "Payments", adminOnly: false },
+      { path: "/home/boq", icon: FileText, label: "BOQ", adminOnly: false },
+      { path: "/home/expenses", icon: TrendingUp, label: "Expenses", adminOnly: false },
+      { path: "/home/feed", icon: Rss, label: "Feed", adminOnly: false },
+      { path: "/home/invite", icon: UserPlus, label: "Invite", adminOnly: true },
     ],
     []
   );
@@ -110,7 +110,7 @@ const Header: React.FC = () => {
       <div className="px-4 md:px-8 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 no-underline group">
+          <Link to="/home" className="flex items-center gap-3 no-underline group">
             <div className="relative">
               <div className="relative bg-[#1a1a1a] p-2.5 rounded-xl">
                 <Building2 className="h-6 w-6 text-white" />
@@ -220,7 +220,7 @@ const Header: React.FC = () => {
                       type="button"
                       onClick={() => {
                         setIsSiteMenuOpen(false);
-                        navigate("/manage-sites");
+                        navigate("/home/manage-sites");
                       }}
                       className="flex w-full items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
                     >
@@ -298,7 +298,7 @@ const Header: React.FC = () => {
                       type="button"
                       onClick={() => {
                         setIsProfileDropdownOpen(false);
-                        navigate('/manage-sites');
+                        navigate('/home/manage-sites');
                       }}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-all"
                     >
@@ -307,7 +307,7 @@ const Header: React.FC = () => {
                     </button>
                     {isAdmin && (
                       <Link
-                        to="/invite"
+                        to="/home/invite"
                         onClick={() => setIsProfileDropdownOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-all no-underline"
                       >

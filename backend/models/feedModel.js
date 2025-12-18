@@ -24,6 +24,11 @@ const FeedSchema = new mongoose.Schema(
       enum: ["update", "photo", "document", "milestone"],
       default: "update",
     },
+    title: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     content: {
       type: String,
       trim: true,
@@ -33,6 +38,25 @@ const FeedSchema = new mongoose.Schema(
       {
         type: String,
         trim: true,
+      },
+    ],
+    attachments: [
+      {
+        url: {
+          type: String,
+          trim: true,
+        },
+        name: {
+          type: String,
+          trim: true,
+        },
+        type: {
+          type: String,
+          trim: true,
+        },
+        size: {
+          type: Number,
+        },
       },
     ],
     likes: {

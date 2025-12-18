@@ -42,10 +42,6 @@ const Invite: React.FC = () => {
       navigate("/login", { replace: true });
       return;
     }
-
-    if (user?.role !== "ADMIN") {
-      navigate("/", { replace: true });
-    }
   }, [authLoading, navigate, token, user]);
 
   useEffect(() => {
@@ -135,8 +131,7 @@ const Invite: React.FC = () => {
           </div>
         )}
 
-   
-
+        {user?.role === "ADMIN" && (
         <form onSubmit={handleSubmit} className="mt-8 space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
           <div className="grid gap-6 md:grid-cols-2">
             <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
@@ -222,6 +217,7 @@ const Invite: React.FC = () => {
             )}
           </button>
         </form>
+        )}
              {/* Project Team Section */}
         <div className="mt-8 rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="flex items-center gap-3 p-6 border-b border-gray-100">

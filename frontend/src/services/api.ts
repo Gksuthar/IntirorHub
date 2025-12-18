@@ -61,8 +61,15 @@ export interface FeedUserDto {
 export interface FeedItemDto {
   id: string;
   type: "update" | "photo" | "document" | "milestone";
+  title?: string;
   content: string;
   images: string[];
+  attachments?: Array<{
+    url: string;
+    name: string;
+    type: string;
+    size?: number;
+  }>;
   timestamp: string;
   likes: number;
   comments: number;
@@ -268,8 +275,15 @@ export const feedApi = {
   createFeed: (
     body: {
       siteId: string;
+      title?: string;
       content: string;
       images: string[];
+      attachments?: Array<{
+        url: string;
+        name: string;
+        type: string;
+        size?: number;
+      }>;
     },
     token: string
   ) =>

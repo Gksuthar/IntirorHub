@@ -14,6 +14,7 @@ import {
   MapPin,
   Clock,
   X,
+  Download,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSite } from "../context/SiteContext";
@@ -27,8 +28,15 @@ interface FeedItem {
     avatar: string;
   };
   type: "update" | "photo" | "document" | "milestone";
+  title?: string;
   content: string;
   images?: string[];
+  attachments?: Array<{
+    url: string;
+    name: string;
+    type: string;
+    size?: number;
+  }>;
   timestamp: string;
   likes: number;
   comments: number;
@@ -54,8 +62,10 @@ const Feed: React.FC = () => {
   const { user, token } = useAuth();
   const { activeSite, sites, openCreateSite } = useSite();
   const navigate = useNavigate();
+  const [newTitle, setNewTitle] = useState("");
   const [newPost, setNewPost] = useState("");
   const [selectedImages, setSelectedImages] = useState<Array<{ id: string; src: string; name: string }>>([]);
+  const [selectedFiles, setSelectedFiles] = useState<Array<{ id: string; file: File }>>([]);
   const [feedItems, setFeedItems] = useState<FeedItem[]>(initialFeedItems);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [loading, setLoading] = useState(false);
@@ -63,11 +73,12 @@ const Feed: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [siteError, setSiteError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
   const avatarSeed = encodeURIComponent(user?.email || user?.name || "You");
   const isAdmin = user?.role === "ADMIN";
   const activeSiteId = activeSite?.id ?? null;
-  const isPostDisabled = (!newPost.trim() && selectedImages.length === 0) || isSubmitting;
+  const isPostDisabled = (!newTitle.trim() && !newPost.trim() && selectedImages.length === 0 && selectedFiles.length === 0) || isSubmitting;
 
   const filters: Array<{ key: FilterKey; label: string }> = useMemo(
         () => [
@@ -133,10 +144,41 @@ const Feed: React.FC = () => {
         setSelectedImages((prev) => prev.filter((image) => image.id !== id));
       };
 
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const chosenFiles = Array.from(files);
+    setSelectedFiles((prev) => [
+      ...prev,
+      ...chosenFiles.map((file) => ({ id: generateId(), file })),
+    ]);
+
+    if (attachmentInputRef.current) {
+      attachmentInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setSelectedFiles((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSubmitPost = async () => {
+    const title = newTitle.trim();
     const content = newPost.trim();
     setSiteError(null);
-    if (!content && selectedImages.length === 0) {
+    if (!title && !content && selectedImages.length === 0 && selectedFiles.length === 0) {
       return;
     }
     if (!activeSiteId) {
@@ -148,11 +190,23 @@ const Feed: React.FC = () => {
     }
     setIsSubmitting(true);
     try {
+      // Convert files to base64
+      const attachments = await Promise.all(
+        selectedFiles.map(async ({ file }) => ({
+          url: await fileToBase64(file),
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        }))
+      );
+
       const response = await feedApi.createFeed(
         {
           siteId: activeSiteId,
+          title,
           content,
           images: selectedImages.map((image) => image.src),
+          attachments,
         },
         token
       );
@@ -161,19 +215,26 @@ const Feed: React.FC = () => {
         id: created.id,
         user: created.user,
         type: created.type,
+        title: created.title,
         content: created.content,
         images: created.images,
+        attachments: created.attachments,
         timestamp: created.timestamp,
         likes: created.likes,
         comments: created.comments,
         siteName: created.siteName,
       };
       setFeedItems((prev) => [newItem, ...prev]);
+      setNewTitle("");
       setNewPost("");
       setSelectedImages([]);
+      setSelectedFiles([]);
       setActiveFilter("all");
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+      }
+      if (attachmentInputRef.current) {
+        attachmentInputRef.current.value = "";
       }
     } catch (err) {
       console.error("createFeed error", err);
@@ -197,8 +258,10 @@ const Feed: React.FC = () => {
           id: item.id,
           user: item.user,
           type: item.type,
+          title: item.title,
           content: item.content,
           images: item.images,
+          attachments: item.attachments,
           timestamp: item.timestamp,
           likes: item.likes,
           comments: item.comments,
@@ -262,6 +325,13 @@ const Feed: React.FC = () => {
                       className="h-10 w-10 rounded-full"
                     />
                     <div className="flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={newTitle}
+                        onChange={(event) => setNewTitle(event.target.value)}
+                        placeholder="Add a title (optional)"
+                        className="w-full mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 outline-none transition focus:border-black focus:ring-2 focus:ring-black/10 sm:rounded-xl sm:px-4"
+                      />
                       <textarea
                         value={newPost}
                         onChange={(event) => setNewPost(event.target.value)}
@@ -289,6 +359,27 @@ const Feed: React.FC = () => {
                         </div>
                       )}
 
+                      {selectedFiles.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {selectedFiles.map(({ id, file }) => (
+                            <div
+                              key={id}
+                              className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+                            >
+                              <FileText className="h-4 w-4 text-gray-500" />
+                              <span className="text-xs text-gray-700 max-w-[120px] truncate">{file.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFile(id)}
+                                className="text-gray-400 hover:text-red-600"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="mt-3 flex flex-col items-stretch gap-3 sm:mt-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2 overflow-x-auto">
                           <input
@@ -299,6 +390,14 @@ const Feed: React.FC = () => {
                             onChange={handleImageSelect}
                             className="hidden"
                           />
+                          <input
+                            ref={attachmentInputRef}
+                            type="file"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,video/*"
+                            multiple
+                            onChange={handleFileSelect}
+                            className="hidden"
+                          />
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
@@ -307,6 +406,15 @@ const Feed: React.FC = () => {
                             <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             <span className="hidden xs:inline">Add photos</span>
                             <span className="xs:hidden">Photos</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => attachmentInputRef.current?.click()}
+                            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-400 hover:text-gray-900 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm"
+                          >
+                            <Paperclip className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden xs:inline">Attach files</span>
+                            <span className="xs:hidden">Files</span>
                           </button>
                           <button
                             type="button"
@@ -399,18 +507,9 @@ const Feed: React.FC = () => {
                         </button>
                       </div>
 
-                      {item.images && item.images.length > 0 && (
-                        <div
-                          className={`mt-4 grid gap-2 ${item.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
-                        >
-                          {item.images.map((image, index) => (
-                            <img
-                              key={`${item.id}-${index}`}
-                              src={image}
-                              alt={`Post asset ${index + 1}`}
-                              className="h-48 w-full rounded-xl object-cover"
-                            />
-                          ))}
+                      {item.title && (
+                        <div className="mt-3">
+                          <h3 className="text-base font-semibold text-gray-900">{item.title}</h3>
                         </div>
                       )}
 
@@ -429,6 +528,45 @@ const Feed: React.FC = () => {
                           </button>
                         )}
                       </div>
+
+                      {item.images && item.images.length > 0 && (
+                        <div
+                          className={`mt-4 grid gap-2 ${item.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
+                        >
+                          {item.images.map((image, index) => (
+                            <img
+                              key={`${item.id}-${index}`}
+                              src={image}
+                              alt={`Post asset ${index + 1}`}
+                              className="h-48 w-full rounded-xl object-cover"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {item.attachments && item.attachments.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          {item.attachments.map((attachment, index) => (
+                            <a
+                              key={`${item.id}-attachment-${index}`}
+                              href={attachment.url}
+                              download={attachment.name}
+                              className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 hover:bg-gray-100 transition-colors"
+                            >
+                              <FileText className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">{attachment.name}</p>
+                                {attachment.size && (
+                                  <p className="text-xs text-gray-500">
+                                    {(attachment.size / 1024).toFixed(1)} KB
+                                  </p>
+                                )}
+                              </div>
+                              <Download className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
 
                       <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
                         <div className="flex items-center gap-4">

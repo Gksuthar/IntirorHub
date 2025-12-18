@@ -1,394 +1,552 @@
 import React, { useState } from "react";
 import {
   Plus,
-  Search,
-  Filter,
   Download,
+  Share2,
   Edit2,
   Trash2,
-  ChevronDown,
-  ChevronRight,
-  Package,
-  IndianRupee,
+  MessageSquare,
 } from "lucide-react";
 
 interface BOQItem {
   id: number;
-  category: string;
-  items: {
-    id: number;
-    name: string;
-    unit: string;
-    quantity: number;
-    rate: number;
-    amount: number;
-    status: "completed" | "in-progress" | "pending";
-  }[];
+  name: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+  amount: number;
+  category: "furniture" | "services";
+  comments?: number;
+}
+
+interface Room {
+  id: string;
+  name: string;
+  items: BOQItem[];
+  subtotal: number;
 }
 
 const BOQ: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [expandedCategories, setExpandedCategories] = useState<number[]>([1, 2]);
+  const [selectedCategory, setSelectedCategory] = useState<"furniture" | "services" | "all">("all");
+  const [selectedRoom, setSelectedRoom] = useState<string>("all");
 
-  const boqData: BOQItem[] = [
+  const rooms: Room[] = [
     {
-      id: 1,
-      category: "Civil Work",
+      id: "living-room",
+      name: "Living Room",
+      subtotal: 134450,
       items: [
         {
           id: 1,
-          name: "Foundation Work",
-          unit: "Sq.ft",
-          quantity: 1200,
-          rate: 150,
-          amount: 180000,
-          status: "completed",
+          name: "L-Shaped Sofa",
+          quantity: 1,
+          unit: "Nos.",
+          rate: 45000,
+          amount: 45000,
+          category: "furniture",
+          comments: 1,
         },
         {
           id: 2,
-          name: "Brick Work",
-          unit: "Sq.ft",
-          quantity: 2500,
-          rate: 85,
-          amount: 212500,
-          status: "completed",
+          name: "Coffee Table",
+          quantity: 1,
+          unit: "Nos.",
+          rate: 8500,
+          amount: 8500,
+          category: "furniture",
         },
         {
           id: 3,
-          name: "Plastering",
-          unit: "Sq.ft",
-          quantity: 3000,
-          rate: 45,
-          amount: 135000,
-          status: "in-progress",
+          name: "TV Unit",
+          quantity: 1,
+          unit: "Nos.",
+          rate: 22000,
+          amount: 22000,
+          category: "furniture",
         },
-      ],
-    },
-    {
-      id: 2,
-      category: "Electrical",
-      items: [
         {
           id: 4,
-          name: "Wiring (Main)",
-          unit: "Points",
-          quantity: 45,
-          rate: 800,
-          amount: 36000,
-          status: "completed",
+          name: "Wall Paint",
+          quantity: 450,
+          unit: "Sq. Ft.",
+          rate: 35,
+          amount: 15750,
+          category: "services",
         },
         {
           id: 5,
-          name: "Switches & Sockets",
-          unit: "Nos",
-          quantity: 60,
-          rate: 350,
-          amount: 21000,
-          status: "in-progress",
+          name: "False Ceiling",
+          quantity: 180,
+          unit: "Sq. Ft.",
+          rate: 120,
+          amount: 21600,
+          category: "services",
         },
         {
           id: 6,
-          name: "Light Fixtures",
-          unit: "Nos",
-          quantity: 25,
-          rate: 2500,
-          amount: 62500,
-          status: "pending",
+          name: "Accent Wall Paneling",
+          quantity: 120,
+          unit: "Sq. Ft.",
+          rate: 180,
+          amount: 21600,
+          category: "services",
         },
       ],
     },
     {
-      id: 3,
-      category: "Plumbing",
+      id: "kitchen",
+      name: "Kitchen",
+      subtotal: 144550,
       items: [
         {
           id: 7,
-          name: "Pipe Fitting",
-          unit: "Rft",
-          quantity: 200,
-          rate: 120,
-          amount: 24000,
-          status: "completed",
+          name: "Modular Kitchen",
+          quantity: 85,
+          unit: "Sq. Ft.",
+          rate: 1200,
+          amount: 102000,
+          category: "furniture",
         },
         {
           id: 8,
-          name: "Sanitary Fittings",
-          unit: "Set",
-          quantity: 3,
-          rate: 45000,
-          amount: 135000,
-          status: "pending",
+          name: "Chimney",
+          quantity: 1,
+          unit: "Nos.",
+          rate: 18000,
+          amount: 18000,
+          category: "furniture",
+        },
+        {
+          id: 9,
+          name: "Wall Tiles",
+          quantity: 150,
+          unit: "Sq. Ft.",
+          rate: 65,
+          amount: 9750,
+          category: "services",
+        },
+        {
+          id: 10,
+          name: "Floor Tiles",
+          quantity: 100,
+          unit: "Sq. Ft.",
+          rate: 85,
+          amount: 8500,
+          category: "services",
+        },
+        {
+          id: 11,
+          name: "Wall Paint",
+          quantity: 180,
+          unit: "Sq. Ft.",
+          rate: 35,
+          amount: 6300,
+          category: "services",
         },
       ],
     },
     {
-      id: 4,
-      category: "Flooring",
+      id: "bedroom-1",
+      name: "Bedroom 1",
+      subtotal: 196200,
       items: [
         {
-          id: 9,
-          name: "Vitrified Tiles",
-          unit: "Sq.ft",
-          quantity: 1800,
-          rate: 85,
-          amount: 153000,
-          status: "in-progress",
+          id: 12,
+          name: "King Size Bed",
+          quantity: 1,
+          unit: "Nos.",
+          rate: 35000,
+          amount: 35000,
+          category: "furniture",
         },
         {
-          id: 10,
-          name: "Marble Flooring",
-          unit: "Sq.ft",
-          quantity: 400,
-          rate: 250,
-          amount: 100000,
-          status: "pending",
+          id: 13,
+          name: "Wardrobe",
+          quantity: 120,
+          unit: "Sq. Ft.",
+          rate: 850,
+          amount: 102000,
+          category: "furniture",
+        },
+        {
+          id: 14,
+          name: "Study Table",
+          quantity: 1,
+          unit: "Nos.",
+          rate: 12000,
+          amount: 12000,
+          category: "furniture",
+        },
+        {
+          id: 15,
+          name: "Wall Paint",
+          quantity: 380,
+          unit: "Sq. Ft.",
+          rate: 35,
+          amount: 13300,
+          category: "services",
+        },
+        {
+          id: 16,
+          name: "False Ceiling",
+          quantity: 140,
+          unit: "Sq. Ft.",
+          rate: 120,
+          amount: 16800,
+          category: "services",
+        },
+        {
+          id: 17,
+          name: "Flooring (Laminate)",
+          quantity: 180,
+          unit: "Sq. Ft.",
+          rate: 95,
+          amount: 17100,
+          category: "services",
+        },
+      ],
+    },
+    {
+      id: "bedroom-2",
+      name: "Bedroom 2",
+      subtotal: 151350,
+      items: [
+        {
+          id: 18,
+          name: "Queen Size Bed",
+          quantity: 1,
+          unit: "Nos.",
+          rate: 28000,
+          amount: 28000,
+          category: "furniture",
+        },
+        {
+          id: 19,
+          name: "Wardrobe",
+          quantity: 90,
+          unit: "Sq. Ft.",
+          rate: 850,
+          amount: 76500,
+          category: "furniture",
+        },
+        {
+          id: 20,
+          name: "Side Table",
+          quantity: 2,
+          unit: "Nos.",
+          rate: 3500,
+          amount: 7000,
+          category: "furniture",
+        },
+        {
+          id: 21,
+          name: "Wall Paint",
+          quantity: 320,
+          unit: "Sq. Ft.",
+          rate: 35,
+          amount: 11200,
+          category: "services",
+        },
+        {
+          id: 22,
+          name: "False Ceiling",
+          quantity: 120,
+          unit: "Sq. Ft.",
+          rate: 120,
+          amount: 14400,
+          category: "services",
+        },
+        {
+          id: 23,
+          name: "Flooring (Laminate)",
+          quantity: 150,
+          unit: "Sq. Ft.",
+          rate: 95,
+          amount: 14250,
+          category: "services",
+        },
+      ],
+    },
+    {
+      id: "bedroom-3",
+      name: "Bedroom 3",
+      subtotal: 146250,
+      items: [
+        {
+          id: 24,
+          name: "Single Bed",
+          quantity: 2,
+          unit: "Nos.",
+          rate: 18000,
+          amount: 36000,
+          category: "furniture",
+        },
+        {
+          id: 25,
+          name: "Wardrobe",
+          quantity: 75,
+          unit: "Sq. Ft.",
+          rate: 850,
+          amount: 63750,
+          category: "furniture",
+        },
+        {
+          id: 26,
+          name: "Study Desk",
+          quantity: 1,
+          unit: "Nos.",
+          rate: 9500,
+          amount: 9500,
+          category: "furniture",
+        },
+        {
+          id: 27,
+          name: "Wall Paint",
+          quantity: 300,
+          unit: "Sq. Ft.",
+          rate: 35,
+          amount: 10500,
+          category: "services",
+        },
+        {
+          id: 28,
+          name: "False Ceiling",
+          quantity: 110,
+          unit: "Sq. Ft.",
+          rate: 120,
+          amount: 13200,
+          category: "services",
+        },
+        {
+          id: 29,
+          name: "Flooring (Laminate)",
+          quantity: 140,
+          unit: "Sq. Ft.",
+          rate: 95,
+          amount: 13300,
+          category: "services",
         },
       ],
     },
   ];
 
-  const toggleCategory = (categoryId: number) => {
-    setExpandedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
+  const totalProjectCost = rooms.reduce((sum, room) => sum + room.subtotal, 0);
+
+  const filteredRooms = selectedRoom === "all" 
+    ? rooms 
+    : rooms.filter(room => room.id === selectedRoom);
+
+  const filterItemsByCategory = (items: BOQItem[]) => {
+    if (selectedCategory === "all") return items;
+    return items.filter(item => item.category === selectedCategory);
   };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return (
-          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-            Completed
-          </span>
-        );
-      case "in-progress":
-        return (
-          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-            In Progress
-          </span>
-        );
-      case "pending":
-        return (
-          <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-            Pending
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const totalAmount = boqData.reduce(
-    (acc, category) =>
-      acc + category.items.reduce((sum, item) => sum + item.amount, 0),
-    0
-  );
-
-  const completedAmount = boqData.reduce(
-    (acc, category) =>
-      acc +
-      category.items
-        .filter((item) => item.status === "completed")
-        .reduce((sum, item) => sum + item.amount, 0),
-    0
-  );
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-24 pb-8 px-4 md:px-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Bill of Quantities
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Detailed breakdown of project costs and quantities
-          </p>
+    <div className="min-h-screen bg-gray-50 pt-20 pb-12 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Bill of Quantities</h1>
+          <p className="text-slate-500">Comprehensive cost breakdown and project estimation</p>
         </div>
-        <div className="flex gap-3">
-          <button className="btn-outline flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </button>
-          <button className="btn-primary flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Add Item
-          </button>
-        </div>
-      </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-          <p className="text-sm text-gray-500 mb-1">Total BOQ Value</p>
-          <p className="text-2xl font-bold text-gray-900">
-            ₹{(totalAmount / 100000).toFixed(2)}L
-          </p>
-        </div>
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-          <p className="text-sm text-gray-500 mb-1">Completed Value</p>
-          <p className="text-2xl font-bold text-green-600">
-            ₹{(completedAmount / 100000).toFixed(2)}L
-          </p>
-        </div>
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-          <p className="text-sm text-gray-500 mb-1">In Progress</p>
-          <p className="text-2xl font-bold text-blue-600">
-            ₹{((totalAmount - completedAmount) / 100000 / 2).toFixed(2)}L
-          </p>
-        </div>
-        <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-          <p className="text-sm text-gray-500 mb-1">Progress</p>
-          <div className="flex items-center gap-3">
-            <p className="text-2xl font-bold text-gray-900">
-              {Math.round((completedAmount / totalAmount) * 100)}%
-            </p>
-            <div className="flex-1 bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-green-500 h-2 rounded-full"
-                style={{
-                  width: `${(completedAmount / totalAmount) * 100}%`,
-                }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filter */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search items..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input pl-10"
-            />
-          </div>
-          <button className="btn-outline flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filter
+        {/* Category Filters */}
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={() => setSelectedCategory("all")}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              selectedCategory === "all"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            All Items
+          </button>
+          <button
+            onClick={() => setSelectedCategory("furniture")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              selectedCategory === "furniture"
+                ? "bg-indigo-600 text-white"
+                : "bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-current"></span>
+            Furniture
+          </button>
+          <button
+            onClick={() => setSelectedCategory("services")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              selectedCategory === "services"
+                ? "bg-orange-500 text-white"
+                : "bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-current"></span>
+            Services
           </button>
         </div>
-      </div>
 
-      {/* BOQ Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {boqData.map((category) => (
-          <div key={category.id} className="border-b border-gray-200 last:border-0">
-            {/* Category Header */}
+        {/* Room Tabs */}
+        <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <button
-              onClick={() => toggleCategory(category.id)}
-              className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+              onClick={() => setSelectedRoom("all")}
+              className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                selectedRoom === "all"
+                  ? "bg-indigo-50 text-indigo-600 border-2 border-indigo-200"
+                  : "bg-white text-slate-600 border-2 border-slate-200 hover:border-slate-300"
+              }`}
             >
-              <div className="flex items-center gap-3">
-                {expandedCategories.includes(category.id) ? (
-                  <ChevronDown className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                )}
-                <Package className="h-5 w-5 text-blue-600" />
-                <span className="font-semibold text-gray-900">
-                  {category.category}
-                </span>
-                <span className="text-sm text-gray-500">
-                  ({category.items.length} items)
-                </span>
-              </div>
-              <span className="font-semibold text-gray-900">
-                ₹
-                {category.items
-                  .reduce((sum, item) => sum + item.amount, 0)
-                  .toLocaleString("en-IN")}
-              </span>
+              All Rooms
             </button>
-
-            {/* Category Items */}
-            {expandedCategories.includes(category.id) && (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-y border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                        Item
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                        Unit
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-                        Quantity
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-                        Rate (₹)
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
-                        Amount (₹)
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {category.items.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-gray-900">
-                          {item.name}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">{item.unit}</td>
-                        <td className="px-6 py-4 text-right text-gray-900">
-                          {item.quantity.toLocaleString("en-IN")}
-                        </td>
-                        <td className="px-6 py-4 text-right text-gray-900">
-                          {item.rate.toLocaleString("en-IN")}
-                        </td>
-                        <td className="px-6 py-4 text-right font-semibold text-gray-900">
-                          {item.amount.toLocaleString("en-IN")}
-                        </td>
-                        <td className="px-6 py-4">{getStatusBadge(item.status)}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-blue-600">
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                            <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-red-600">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {rooms.map((room) => (
+              <button
+                key={room.id}
+                onClick={() => setSelectedRoom(room.id)}
+                className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                  selectedRoom === room.id
+                    ? "bg-indigo-50 text-indigo-600 border-2 border-indigo-200"
+                    : "bg-white text-slate-600 border-2 border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                {room.name}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Total Summary */}
-      <div className="mt-6 bg-blue-50 rounded-xl p-6 border border-blue-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <IndianRupee className="h-8 w-8 text-blue-600" />
+        {/* Room Sections */}
+        <div className="space-y-6">
+          {filteredRooms.map((room) => {
+            const filteredItems = filterItemsByCategory(room.items);
+            if (filteredItems.length === 0) return null;
+
+            const roomSubtotal = filteredItems.reduce((sum, item) => sum + item.amount, 0);
+
+            return (
+              <div key={room.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                {/* Room Header */}
+                <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                  <h2 className="text-xl font-semibold text-slate-900">{room.name}</h2>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                    <Plus className="h-4 w-4" />
+                    Add Item
+                  </button>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        <th className="text-left py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Item Name
+                        </th>
+                        <th className="text-center py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Quantity
+                        </th>
+                        <th className="text-center py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Rate
+                        </th>
+                        <th className="text-center py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="text-center py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredItems.map((item) => (
+                        <tr
+                          key={item.id}
+                          className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
+                        >
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-1 h-10 rounded-full ${
+                                  item.category === "furniture" ? "bg-indigo-600" : "bg-orange-500"
+                                }`}
+                              ></div>
+                              <div>
+                                <p className="font-medium text-slate-900">{item.name}</p>
+                                {item.comments && (
+                                  <p className="text-xs text-indigo-600 flex items-center gap-1 mt-1">
+                                    <MessageSquare className="h-3 w-3" />
+                                    {item.comments} comment
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-center text-slate-700">
+                            {item.quantity} {item.unit}
+                          </td>
+                          <td className="py-4 px-6 text-center text-slate-700">
+                            ₹{item.rate.toLocaleString("en-IN")}
+                          </td>
+                          <td className="py-4 px-6 text-center font-semibold text-slate-900">
+                            ₹{item.amount.toLocaleString("en-IN")}
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center justify-center gap-2">
+                              <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                                <Edit2 className="h-4 w-4 text-slate-600" />
+                              </button>
+                              <button className="p-2 hover:bg-red-50 rounded-lg transition-colors">
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Subtotal Section */}
+                <div className="bg-slate-50 px-6 py-4 flex items-center justify-between border-t border-slate-100">
+                  <span className="text-sm font-medium text-slate-700">Subtotal</span>
+                  <span className="text-2xl font-bold text-slate-900">
+                    ₹{roomSubtotal.toLocaleString("en-IN")}
+                  </span>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="p-4 flex gap-3">
+                  <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors font-medium">
+                    <Download className="h-4 w-4" />
+                    Export PDF
+                  </button>
+                  <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-900 border-2 border-slate-200 rounded-xl hover:bg-slate-50 transition-colors font-medium">
+                    <Share2 className="h-4 w-4" />
+                    Share BOQ
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Total Project Cost */}
+        <div className="mt-8 bg-slate-900 rounded-2xl p-8 text-white">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <p className="text-sm text-blue-600 font-medium">
-                Total BOQ Amount
+              <p className="text-slate-300 text-sm uppercase tracking-wider mb-2">
+                Total Project Cost
               </p>
-              <p className="text-3xl font-bold text-blue-900">
-                ₹{totalAmount.toLocaleString("en-IN")}
-              </p>
+              <p className="text-5xl font-bold">₹{totalProjectCost.toLocaleString("en-IN")}</p>
+            </div>
+            <div className="flex gap-3">
+              <button className="px-6 py-3 bg-white text-slate-900 rounded-xl hover:bg-slate-100 transition-colors font-medium">
+                Download Complete BOQ
+              </button>
+              <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium">
+                Share Project
+              </button>
             </div>
           </div>
-          <button className="btn-primary">Generate Report</button>
         </div>
       </div>
     </div>

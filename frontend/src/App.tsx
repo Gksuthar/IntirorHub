@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import Invite from "./pages/Invite";
 import ManageSites from "./pages/ManageSites";
 import FeedDetail from "./pages/FeedDetail";
+import Landing from "./pages/Landing";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SiteProvider } from "./context/SiteContext";
 
@@ -20,6 +21,34 @@ const LoadingScreen = () => (
     <span className="text-xs uppercase tracking-[0.4em]">Loading</span>
   </div>
 );
+
+const PublicRoute = ({ children }: { children: ReactElement }) => {
+  const { token, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (token) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
+};
+
+const RootRedirect = () => {
+  const { token, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (token) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return <Landing />;
+};
 
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const { token, loading } = useAuth();
@@ -59,11 +88,27 @@ function App() {
       <SiteProvider>
         <Router>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/" element={<RootRedirect />} />
+            
+            <Route 
+              path="/login" 
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              } 
+            />
+            <Route 
+              path="/signup" 
+              element={
+                <PublicRoute>
+                  <Signup />
+                </PublicRoute>
+              } 
+            />
 
             <Route
-              path="/"
+              path="/home"
               element={
                 <ProtectedRoute>
                   <MainLayout />
