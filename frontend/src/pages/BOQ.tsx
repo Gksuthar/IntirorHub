@@ -342,7 +342,7 @@ const BOQ: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white pt-20 pb-12 px-4 md:px-8">
+    <div className="min-h-screen bg-gray-50/40 pt-20 pb-12 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -387,7 +387,8 @@ const BOQ: React.FC = () => {
         </div>
 
         {/* Room Tabs */}
-        <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <button
               onClick={() => setSelectedRoom("all")}

@@ -92,13 +92,13 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-20 pb-24 lg:pb-12 px-4 sm:px-6 md:px-8 bg-white">
+    <div className="min-h-screen pt-16 sm:pt-20 pb-24 lg:pb-12 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-xl mx-auto">
         {/* Last Updated */}
         <p className="text-xs text-slate-400 mb-4 text-center sm:text-left">Last updated 8 minutes ago</p>
         
         {/* Main Card */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 mb-4 shadow-sm">
+        <div className="bg-white rounded-3xl p-8 sm:p-10 mb-4 shadow-sm">
           {/* Top Section with Progress Circle */}
           <div className="flex items-start gap-6 sm:gap-8 mb-8">
             {/* Circular Progress */}
@@ -213,7 +213,7 @@ const Home: React.FC = () => {
         </div>
 
         {/* Recent Site Updates */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-base font-semibold text-slate-900">Recent Site Updates</h3>
             <button 
@@ -233,10 +233,10 @@ const Home: React.FC = () => {
               {recentFeeds.map((feed) => (
                 <div
                   key={feed.id}
-                  className="bg-white border border-slate-100 rounded-2xl p-4 hover:shadow-md transition-all cursor-pointer"
+                  className="bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`w-14 h-14 flex-shrink-0 ${getBgForFeed(feed)} rounded-2xl flex items-center justify-center text-2xl`}>
+                    <div className={`w-16 h-16 flex-shrink-0 ${getBgForFeed(feed)} rounded-2xl flex items-center justify-center text-2xl`}>
                       {getIconForFeed(feed)}
                     </div>
                     <div className="flex-1  min-w-0">

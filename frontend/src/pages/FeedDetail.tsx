@@ -127,13 +127,13 @@ const FeedDetail: React.FC = () => {
         </button>
 
         {/* Feed Item Card */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+        <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm md:p-10">
           {/* User Info */}
           <div className="flex items-start gap-4">
             <img
               src={feedItem.user.avatar}
               alt={feedItem.user.name}
-              className="h-12 w-12 rounded-full"
+              className="h-14 w-14 rounded-full"
             />
             <div className="flex-1">
               <div className="flex items-center gap-2">

@@ -12,7 +12,7 @@ const ManageSites: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-md p-6 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Building2 className="h-8 w-8 text-red-600" />
@@ -34,7 +34,7 @@ const ManageSites: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -57,7 +57,7 @@ const ManageSites: React.FC = () => {
 
 
         {/* Sites Grid */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-sm p-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Sites</h2>
           
           {sites.length === 0 ? (
@@ -81,7 +81,7 @@ const ManageSites: React.FC = () => {
                 return (
                   <div
                     key={site.id}
-                    className={`relative group rounded-xl p-5 transition-all border-2 ${
+                    className={`relative group rounded-xl p-6 transition-all border-2 ${
                       isCurrent
                         ? "bg-gray-50 border-gray-900 shadow-md"
                         : "bg-white border-gray-200 hover:border-gray-400 hover:shadow-sm"
@@ -100,7 +100,7 @@ const ManageSites: React.FC = () => {
                     {/* Site Icon */}
                     <div className="flex items-start gap-4 mb-4">
                       <div
-                        className={`flex-shrink-0 h-14 w-14 rounded-xl flex items-center justify-center ${
+                        className={`flex-shrink-0 h-16 w-16 rounded-xl flex items-center justify-center ${
                           isCurrent ? "bg-gray-900" : "bg-gradient-to-br from-gray-700 to-gray-900"
                         }`}
                       >
