@@ -198,6 +198,30 @@ export const inviteUser = async (req, res) => {
   }
 };
 
+export const listCompanyUsers = async (req, res) => {
+  try {
+    const members = await userModel
+      .find({ companyName: req.user.companyName })
+      .select("name email role companyName createdAt");
+
+    const payload = members.map((member) => ({
+      id: member._id,
+      name: member.name || member.email,
+      email: member.email,
+      role: member.role,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+        member.email || member.name || member.companyName || "User"
+      )}`,
+      joinedAt: member.createdAt,
+    }));
+
+    return res.status(200).json({ users: payload });
+  } catch (error) {
+    console.error("listCompanyUsers error", error);
+    return res.status(500).json({ message: "Unable to fetch users" });
+  }
+};
+
 export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -293,6 +317,7 @@ export default {
   loginUser,
   getProfile,
   inviteUser,
+  listCompanyUsers,
   verifyOtp,
   resendOtp,
 };

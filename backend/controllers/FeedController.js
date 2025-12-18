@@ -127,7 +127,31 @@ export const createFeedItem = async (req, res) => {
   }
 };
 
+export const getFeedItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid feed id" });
+    }
+
+    const item = await Feed.findOne({ _id: id, companyName: req.user.companyName })
+      .populate("createdBy", "name email role companyName")
+      .populate("site", "name");
+
+    if (!item) {
+      return res.status(404).json({ message: "Feed item not found" });
+    }
+
+    return res.status(200).json({ item: sanitizeFeedItem(item) });
+  } catch (error) {
+    console.error("getFeedItem error", error);
+    return res.status(500).json({ message: error.message || "Unable to fetch feed item" });
+  }
+};
+
 export default {
   listFeed,
   createFeedItem,
+  getFeedItem,
 };
