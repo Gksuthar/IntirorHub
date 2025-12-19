@@ -90,7 +90,7 @@ const Home: React.FC = () => {
   return (
     <>
       {/* Main Card */}
-      <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-sm max-w-2xl  mx-auto mt-20 mb-8">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm w-full mt-20 mb-8">
         {/* Last Updated */}
         <p className="text-xs text-slate-400 mb-4 text-center sm:text-left">Last updated 8 minutes ago</p>
         
