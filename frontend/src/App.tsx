@@ -13,6 +13,7 @@ import Invite from "./pages/Invite";
 import ManageSites from "./pages/ManageSites";
 import FeedDetail from "./pages/FeedDetail";
 import Landing from "./pages/Landing";
+import UserListing from "./pages/UserListing";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SiteProvider } from "./context/SiteContext";
 
@@ -122,6 +123,7 @@ function App() {
               <Route path="feed" element={<Feed />} />
               <Route path="feed/:id" element={<FeedDetail />} />
               <Route path="manage-sites" element={<ManageSites />} />
+              <Route path="users" element={<UserListing />} />
               <Route
                 path="invite"
                 element={

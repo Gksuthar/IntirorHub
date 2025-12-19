@@ -15,7 +15,9 @@ import {
   Sparkles,
   UserPlus,
   ChevronDown,
+  Users,
 } from "lucide-react";
+
 import { useAuth } from "../../context/AuthContext";
 import { useSite } from "../../context/SiteContext";
 
@@ -315,6 +317,14 @@ const Header: React.FC = () => {
                         <span className="text-sm font-medium">Invite teammates</span>
                       </Link>
                     )}
+                    <Link
+                      to="/home/users"
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-all no-underline"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm font-medium">User Listing</span>
+                    </Link>
                   </div>
                   <hr className="my-2 border-gray-100" />
                   <button

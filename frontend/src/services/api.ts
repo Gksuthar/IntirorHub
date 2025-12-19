@@ -179,6 +179,7 @@ export const authApi = {
       name?: string;
       role: Exclude<UserRole, "ADMIN">;
       phone?: string;
+      siteIds?: string[];
     },
     token: string
   ) =>
@@ -215,6 +216,7 @@ export const userApi = {
       name?: string;
       role: Exclude<UserRole, "ADMIN">;
       phone?: string;
+      siteIds?: string[];
     },
     token: string
   ) =>

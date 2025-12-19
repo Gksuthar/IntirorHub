@@ -37,6 +37,10 @@ const UserSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+    siteAccess: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Site",
+    }],
     isVerified: {
       type: Boolean,
       default: false,

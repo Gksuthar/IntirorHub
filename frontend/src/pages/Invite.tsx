@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi, ApiError, type UserRole, userApi } from "../services/api";
-import { Mail, User, Phone, Shield, Loader2, Users } from "lucide-react";
+import { Mail, User, Phone, Shield, Loader2, Users, Building2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useSite } from "../context/SiteContext";
 
 interface CompanyUser {
   id: string;
@@ -21,12 +22,14 @@ const roles: Array<{ value: Exclude<UserRole, "ADMIN">; label: string; descripti
 const Invite: React.FC = () => {
   const navigate = useNavigate();
   const { token, user, loading: authLoading } = useAuth();
+  const { sites } = useSite();
   const [formData, setFormData] = useState({
     email: "",
     name: "",
     phone: "",
     role: roles[0].value,
   });
+  const [selectedSites, setSelectedSites] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -76,6 +79,12 @@ const Invite: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const toggleSite = (siteId: string) => {
+    setSelectedSites((prev) =>
+      prev.includes(siteId) ? prev.filter((id) => id !== siteId) : [...prev, siteId]
+    );
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!token) {
@@ -94,12 +103,14 @@ const Invite: React.FC = () => {
           name: formData.name.trim() || undefined,
           phone: formData.phone.trim() || undefined,
           role: formData.role,
+          siteIds: selectedSites,
         },
         token
       );
 
       setSuccess("Invitation sent. The teammate receives a temporary password via email.");
       setFormData({ email: "", name: "", phone: "", role: roles[0].value });
+      setSelectedSites([]);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : "Unable to send invite";
       setError(message);
@@ -193,6 +204,35 @@ const Invite: React.FC = () => {
                 </option>
               ))}
             </select>
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+            Site Access (Select one or more)
+            <div className="rounded-xl border border-gray-200 bg-white p-4 max-h-48 overflow-y-auto">
+              {sites.length === 0 ? (
+                <p className="text-sm text-gray-500">No sites available. Create a site first.</p>
+              ) : (
+                <div className="space-y-2">
+                  {sites.map((site) => (
+                    <label key={site.id} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedSites.includes(site.id)}
+                        onChange={() => toggleSite(site.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                      />
+                      <Building2 className="h-4 w-4 text-gray-400" />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">{site.name}</div>
+                        {site.description && (
+                          <div className="text-xs text-gray-500">{site.description}</div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </label>
 
           <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">

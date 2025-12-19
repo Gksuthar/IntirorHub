@@ -1,3 +1,28 @@
+// List all users related to the current user's parentId or their own id
+export const listRelatedUsers = async (req, res) => {
+  try {
+    // All users can access this endpoint
+    // Show all users in the same company
+    const companyName = req.user.companyName;
+    const members = await userModel.find({ companyName }).select("name email role companyName createdAt");
+
+    const payload = members.map((member) => ({
+      id: member._id,
+      name: member.name || member.email,
+      email: member.email,
+      role: member.role,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+        member.email || member.name || member.companyName || "User"
+      )}`,
+      joinedAt: member.createdAt,
+    }));
+
+    return res.status(200).json({ users: payload });
+  } catch (error) {
+    console.error("listRelatedUsers error", error);
+    return res.status(500).json({ message: "Unable to fetch related users" });
+  }
+};
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
@@ -135,7 +160,7 @@ export const inviteUser = async (req, res) => {
       return res.status(403).json({ message: "Only admins can invite teammates" });
     }
 
-    const { email, name, role, phone } = req.body;
+    const { email, name, role, phone, siteIds } = req.body;
 
     if (!email || !role) {
       return res.status(400).json({ message: "Email and role are required" });
@@ -170,6 +195,7 @@ export const inviteUser = async (req, res) => {
       password: hashedPassword,
       role: normalizedRole,
       parentId: req.user._id,
+      siteAccess: siteIds && Array.isArray(siteIds) ? siteIds : [],
       isVerified: true,
     });
 
