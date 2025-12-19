@@ -76,8 +76,8 @@ const Invite: React.FC = () => {
           email: u.email,
           role: u.role,
           avatar: u.avatar,
-          siteAccessCount: u.siteAccessCount ?? 0,
-          siteAccess: u.siteAccess ?? [],
+          siteAccessCount: (u as any).siteAccessCount ?? 0,
+          siteAccess: (u as any).siteAccess ?? [],
         }));
         setProjectUsers(users);
       } catch (err) {

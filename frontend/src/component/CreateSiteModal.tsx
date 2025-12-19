@@ -122,7 +122,6 @@ const CreateSiteModal: React.FC<CreateSiteModalProps> = ({ isOpen, onClose, onCr
               value={contractValue}
               onChange={(event) => setcontractValue(event.target.value)}
               placeholder="add contractValue of your site."
-              rows={1}
               className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
             />
           </label>

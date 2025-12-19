@@ -8,8 +8,6 @@ import {
   ThumbsUp,
   Send,
   MoreHorizontal,
-  Camera,
-  Paperclip,
   Sparkles,
   MapPin,
   Clock,
@@ -84,10 +82,9 @@ const Feed: React.FC = () => {
   const [siteError, setSiteError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
-  const [showAddFeedModal, setShowAddFeedModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const avatarSeed = encodeURIComponent(user?.email || user?.name || "You");
+  
   const isAdmin = user?.role === "ADMIN";
   const activeSiteId = activeSite?.id ?? null;
   const isPostDisabled =
