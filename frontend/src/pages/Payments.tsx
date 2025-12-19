@@ -234,7 +234,29 @@ bg-gray-800
 
         </div>
 
-        <p className="text-xs text-gray-400 mb-6">Last updated just now</p>
+        {payments.length > 0 && (
+          <p className="text-xs text-gray-400 mb-6">
+            Last updated:{" "}
+            {(() => {
+              const lastUpdated = payments.reduce((latest, p) => {
+                const pDate = new Date(p.updatedAt || p.createdAt || p.dueDate);
+                return pDate > latest ? pDate : latest;
+              }, new Date(0));
+              
+              const now = new Date();
+              const diffMs = now.getTime() - lastUpdated.getTime();
+              const diffMins = Math.floor(diffMs / 60000);
+              const diffHours = Math.floor(diffMs / 3600000);
+              const diffDays = Math.floor(diffMs / 86400000);
+              
+              if (diffMins < 1) return "just now";
+              if (diffMins < 60) return `${diffMins} min ago`;
+              if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+              if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+              return lastUpdated.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+            })()}
+          </p>
+        )}
 
         {/* Contract Value and Received */}
         <div className="grid grid-cols-2 gap-3 mb-6 bg-white p-5 shadow-sm border border-gray-200 rounded-2xl">
@@ -309,7 +331,16 @@ bg-gray-800
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <h4 className="text-md font-semibold font-md text-gray-600">{payment.title}</h4>
-                  <p className="text-sm text-gray-500">{payment.description}</p>
+                  <p className="text-sm text-gray-500">{contractValue > 0 ? Math.round((payment.amount / contractValue) * 100) : 0}% of total</p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    <br/>
+                    <br/>
+                Due: {new Date(payment.dueDate).toLocaleDateString("en-IN", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
                 </div>
                 <div className="text-right">
                   <p className="text-md font-semibold text-gray-900">{formatCurrency(payment.amount)}</p>
@@ -324,13 +355,7 @@ bg-gray-800
                 </div>
               </div>
 
-              <p className="text-sm text-gray-500 mb-3">
-                Due: {new Date(payment.dueDate).toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
+
 
               {payment.status === "paid" ? (
                 <button

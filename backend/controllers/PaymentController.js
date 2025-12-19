@@ -333,183 +333,310 @@ export const downloadInvoice = async (req, res) => {
     
     doc = new PDFDocument({ 
       size: 'A4', 
-      margin: 50,
+      margin: 40,
       layout: 'portrait'
     });
     
     // Normalize payment id to string to avoid ObjectId method issues
     const paymentIdStr = payment._id.toString();
+    const invoiceNumber = `INV-${paymentIdStr.slice(-8).toUpperCase()}`;
 
     // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=invoice-${paymentIdStr}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${invoiceNumber}.pdf`);
 
     doc.pipe(res);
     
-    // Define colors for the template
-    const primaryColor = '#2c3e50'; // Dark blue-gray
-    const secondaryColor = '#3498db'; // Blue
-    const accentColor = '#e74c3c'; // Red for accents if needed
-    const lightGray = '#ecf0f1';
-    const darkGray = '#34495e';
-    
-    // Helper function to draw a horizontal line
-    const drawLine = (y, width = 520, color = primaryColor) => {
-      doc.strokeColor(color)
-         .lineWidth(1)
-         .moveTo(50, y)
-         .lineTo(50 + width, y)
-         .stroke();
+    // ============== ELEGANT COLOR PALETTE ==============
+    const colors = {
+      primary: '#1a1a2e',       // Deep navy
+      secondary: '#16213e',     // Dark blue
+      accent: '#c9a227',        // Gold accent
+      gold: '#d4af37',          // Classic gold
+      text: '#2d3436',          // Dark text
+      textLight: '#636e72',     // Light text
+      border: '#dfe6e9',        // Light border
+      background: '#fafafa',    // Light background
+      white: '#ffffff',
+      success: '#27ae60',       // Green for paid
+      warning: '#f39c12',       // Orange for pending
+      danger: '#e74c3c'         // Red for overdue
     };
-    
-    // Helper function to add a table-like structure
-    const addTable = (headers, rows, startY, colWidths) => {
-      let y = startY;
+
+    const pageWidth = doc.page.width;
+    const pageHeight = doc.page.height;
+    const margin = 40;
+    const contentWidth = pageWidth - (margin * 2);
+
+    // Helper function to format amount in Indian style without locale issues
+    const formatAmount = (amount) => {
+      const num = Number(amount);
+      if (isNaN(num)) return '0';
+      const parts = num.toFixed(2).split('.');
+      let intPart = parts[0];
+      const decPart = parts[1];
       
-      // Headers
-      doc.fillColor(primaryColor)
-         .font('Helvetica-Bold')
-         .fontSize(10);
-      headers.forEach((header, i) => {
-        doc.text(header, 50 + colWidths.slice(0, i).reduce((a, b) => a + b, 0), y);
-      });
-      drawLine(y + 10);
-      y += 15;
+      // Indian number format: last 3 digits, then groups of 2
+      let result = '';
+      if (intPart.length > 3) {
+        result = ',' + intPart.slice(-3);
+        intPart = intPart.slice(0, -3);
+        while (intPart.length > 2) {
+          result = ',' + intPart.slice(-2) + result;
+          intPart = intPart.slice(0, -2);
+        }
+        result = intPart + result;
+      } else {
+        result = intPart;
+      }
       
-      // Rows
-      doc.fillColor(darkGray)
-         .fontSize(9)
-         .font('Helvetica');
-      rows.forEach(row => {
-        row.forEach((cell, i) => {
-          doc.text(cell.toString(), 50 + colWidths.slice(0, i).reduce((a, b) => a + b, 0), y);
-        });
-        drawLine(y + 10);
-        y += 12;
-      });
-      
-      return y;
+      // Remove decimal if .00
+      if (decPart === '00') {
+        return result;
+      }
+      return result + '.' + decPart;
     };
+
+    // ============== BACKGROUND WATERMARK ==============
+    // Diagonal watermark pattern
+    doc.save();
+    doc.fillColor(colors.border).opacity(0.08);
+    doc.fontSize(80).font('Helvetica-Bold');
     
-    // Header: Company Branding
-    doc.fillColor(primaryColor)
-       .fontSize(24)
-       .font('Helvetica-Bold')
-       .text(payment.companyName, 50, 50, { align: 'center', width: 500 });
-    
-    // Subheader
-    doc.fillColor(secondaryColor)
-       .fontSize(14)
-       .text('SITEZERO', 50, 80, { align: 'center', width: 500 });
-    
-    drawLine(110);
-    
-    // Invoice Title and Details
-    let currentY = 130;
-    doc.fillColor(primaryColor)
-       .fontSize(20)
-       .font('Helvetica-Bold')
-       .text('PAYMENT INVOICE', 50, currentY, { underline: true });
-    
-    currentY += 40;
-    
-    // Invoice Meta Info (right-aligned)
-    doc.fillColor(darkGray)
-       .fontSize(10)
-       .font('Helvetica');
-    doc.text(`Invoice #: ${paymentIdStr.slice(-8).toUpperCase()}`, 350, currentY);
-    doc.text(`Date Issued: ${new Date().toLocaleDateString('en-IN')}`, 350, currentY + 15);
-    doc.text(`Payment ID: ${paymentIdStr.slice(-6)}`, 350, currentY + 30);
-    
-    currentY += 70;
-    
-    // Bill To Section
-    doc.fillColor(primaryColor)
-       .fontSize(12)
-       .font('Helvetica-Bold')
-       .text('Bill To:', 50, currentY);
-    
-    currentY += 15;
-    doc.fillColor(darkGray)
-       .fontSize(10);
-    doc.text(`Site Name: ${payment.siteId.name}`, 50, currentY);
-    doc.text(`Location: ${payment.siteId.location || 'Not Specified'}`, 50, currentY + 15);
-    doc.text(`Client: ${payment.siteId.clientName || 'N/A'}`, 50, currentY + 30);
-    
-    currentY += 60;
-    
-    // Payment Details Table
-    doc.fillColor(primaryColor)
-       .fontSize(12)
-       .font('Helvetica-Bold')
-       .text('Payment Details', 50, currentY);
-    
-    currentY += 20;
-    
-    const paymentHeaders = ['Description', 'Amount (₹)', 'Due Date', 'Status'];
-    const paymentRows = [
-      [payment.description || payment.title, payment.amount.toLocaleString('en-IN'), 
-       new Date(payment.dueDate).toLocaleDateString('en-IN'), payment.status.toUpperCase()],
-    ];
-    
-    const colWidths = [200, 100, 100, 120]; // Approximate widths
-    
-    currentY = addTable(paymentHeaders, paymentRows, currentY, colWidths);
-    
-    if (payment.paidDate) {
-      currentY += 10;
-      doc.fillColor(darkGray)
-         .fontSize(10)
-         .text(`Paid on: ${new Date(payment.paidDate).toLocaleDateString('en-IN')}`, 50, currentY);
+    // Create diagonal watermark text
+    const watermarkText = 'INTERIOR DESIGN';
+    for (let i = 0; i < 3; i++) {
+      doc.rotate(-35, { origin: [pageWidth / 2, pageHeight / 2] });
+      doc.text(watermarkText, -100, 250 + (i * 200), { align: 'center', width: pageWidth + 200 });
+      doc.rotate(35, { origin: [pageWidth / 2, pageHeight / 2] });
     }
-    
-    currentY += 40;
-    
-    // Total Summary Box
-    doc.fillColor(primaryColor)
-       .fontSize(14)
-       .font('Helvetica-Bold')
-       .text('Total Amount Due:', 50, currentY);
-    
-    doc.fillColor(secondaryColor)
-       .fontSize(18)
-       .font('Helvetica-Bold')
-       .text(`₹${payment.amount.toLocaleString('en-IN')}`, 300, currentY);
-    
-    drawLine(currentY + 30);
-    
-    currentY += 60;
-    
-    // Notes Section (if description is long, but keep simple)
-    doc.fillColor(darkGray)
-       .fontSize(10)
-       .text('Notes:', 50, currentY, { continued: true });
-    doc.text(payment.description || 'Standard stage payment for interior work.', { align: 'justify', width: 450 });
-    
-    currentY += 50;
-    
-    // Footer
-    doc.fillColor(lightGray) // Background for footer
-       .rect(0, doc.page.height - 100, doc.page.width, 100)
+    doc.restore();
+    doc.opacity(1);
+
+    // ============== DECORATIVE TOP BORDER ==============
+    doc.fillColor(colors.accent)
+       .rect(0, 0, pageWidth, 5)
+       .fill();
+
+    // ============== HEADER SECTION ==============
+    let currentY = 25;
+
+    // Left side: Logo-style Brand Name
+    const logoBoxSize = 45;
+    doc.fillColor(colors.primary)
+       .roundedRect(margin, currentY, logoBoxSize, logoBoxSize, 6)
        .fill();
     
-    doc.fillColor(primaryColor)
-       .fontSize(10)
-       .font('Helvetica-Oblique')
-       .text('Thank you for choosing us for your SITEZERO needs!', 
-             50, doc.page.height - 70, { align: 'center', width: 500 });
+    // Brand initials inside logo box
+    const brandInitials = payment.companyName
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join('');
     
-    doc.fillColor(darkGray)
+    doc.fillColor(colors.white)
+       .fontSize(18)
+       .font('Helvetica-Bold')
+       .text(brandInitials, margin, currentY + 13, { 
+         width: logoBoxSize, 
+         align: 'center' 
+       });
+
+    // Company name next to logo
+    doc.fillColor(colors.primary)
+       .fontSize(16)
+       .font('Helvetica-Bold')
+       .text(payment.companyName.toUpperCase(), margin + logoBoxSize + 10, currentY + 5);
+    
+    doc.fillColor(colors.textLight)
        .fontSize(8)
-       .text(`Generated on: ${new Date().toLocaleDateString('en-IN')} | Confidential Document`, 
-             50, doc.page.height - 40, { align: 'center', width: 500 });
+       .font('Helvetica')
+       .text('Interior Design & Execution', margin + logoBoxSize + 10, currentY + 24);
     
-    // Add a subtle border around the page
-    doc.strokeColor(lightGray)
-       .lineWidth(2)
-       .rect(40, 40, doc.page.width - 80, doc.page.height - 100)
-       .stroke();
+    doc.fillColor(colors.accent)
+       .fontSize(8)
+       .font('Helvetica-Bold')
+       .text('SITEZERO', margin + logoBoxSize + 10, currentY + 35);
+
+    // Right side: INVOICE label
+    doc.fillColor(colors.primary)
+       .fontSize(26)
+       .font('Helvetica-Bold')
+       .text('INVOICE', pageWidth - margin - 120, currentY + 8, { 
+         width: 120, 
+         align: 'right' 
+       });
+
+    currentY += 60;
+
+    // Separator line
+    doc.strokeColor(colors.border).lineWidth(1)
+       .moveTo(margin, currentY).lineTo(pageWidth - margin, currentY).stroke();
+    doc.fillColor(colors.accent).rect(margin, currentY - 1, 60, 2).fill();
+
+    currentY += 15;
+
+    // ============== INVOICE DETAILS ROW ==============
+    doc.fillColor(colors.textLight).fontSize(8).font('Helvetica-Bold').text('INVOICE #', margin, currentY);
+    doc.fillColor(colors.text).fontSize(10).font('Helvetica-Bold').text(invoiceNumber, margin, currentY + 10);
+
+    doc.fillColor(colors.textLight).fontSize(8).font('Helvetica-Bold').text('ISSUE DATE', margin + 120, currentY);
+    doc.fillColor(colors.text).fontSize(9).font('Helvetica')
+       .text(new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), margin + 120, currentY + 10);
+
+    doc.fillColor(colors.textLight).fontSize(8).font('Helvetica-Bold').text('DUE DATE', margin + 240, currentY);
+    doc.fillColor(colors.text).fontSize(9).font('Helvetica')
+       .text(new Date(payment.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), margin + 240, currentY + 10);
+
+    // Status Badge
+    const statusColors = {
+      paid: colors.success,
+      pending: colors.warning,
+      overdue: colors.danger
+    };
+    const statusColor = statusColors[payment.status] || colors.warning;
     
+    doc.fillColor(statusColor).roundedRect(pageWidth - margin - 70, currentY, 70, 22, 3).fill();
+    doc.fillColor(colors.white).fontSize(9).font('Helvetica-Bold')
+       .text(payment.status.toUpperCase(), pageWidth - margin - 70, currentY + 6, { width: 70, align: 'center' });
+
+    currentY += 40;
+
+    // ============== BILL TO & PROJECT (Side by Side) ==============
+    const colWidth = (contentWidth - 20) / 2;
+
+    // Left: Bill To
+    doc.fillColor(colors.background).roundedRect(margin, currentY, colWidth, 70, 4).fill();
+    doc.strokeColor(colors.border).lineWidth(0.5).roundedRect(margin, currentY, colWidth, 70, 4).stroke();
+    doc.fillColor(colors.accent).fontSize(8).font('Helvetica-Bold').text('BILL TO', margin + 10, currentY + 8);
+    doc.fillColor(colors.primary).fontSize(12).font('Helvetica-Bold')
+       .text(payment.siteId.clientName || 'Valued Client', margin + 10, currentY + 22, { width: colWidth - 20 });
+    doc.fillColor(colors.textLight).fontSize(9).font('Helvetica')
+       .text(payment.siteId.location || 'Location not specified', margin + 10, currentY + 40, { width: colWidth - 20 });
+
+    // Right: Project
+    doc.fillColor(colors.background).roundedRect(margin + colWidth + 20, currentY, colWidth, 70, 4).fill();
+    doc.strokeColor(colors.border).lineWidth(0.5).roundedRect(margin + colWidth + 20, currentY, colWidth, 70, 4).stroke();
+    doc.fillColor(colors.accent).fontSize(8).font('Helvetica-Bold').text('PROJECT', margin + colWidth + 30, currentY + 8);
+    doc.fillColor(colors.primary).fontSize(12).font('Helvetica-Bold')
+       .text(payment.siteId.name, margin + colWidth + 30, currentY + 22, { width: colWidth - 20 });
+    doc.fillColor(colors.textLight).fontSize(9).font('Helvetica')
+       .text('Interior Design Project', margin + colWidth + 30, currentY + 40);
+
+    currentY += 85;
+
+    // ============== PAYMENT TITLE & DESCRIPTION ==============
+    doc.fillColor(colors.primary).fontSize(13).font('Helvetica-Bold')
+       .text(payment.title || 'Payment', margin, currentY);
+    currentY += 16;
+    
+    if (payment.description) {
+      doc.fillColor(colors.textLight).fontSize(9).font('Helvetica')
+         .text(payment.description, margin, currentY, { width: contentWidth, lineGap: 2 });
+      const descHeight = doc.heightOfString(payment.description, { width: contentWidth });
+      currentY += Math.min(descHeight, 30) + 8;
+    }
+
+    currentY += 5;
+
+    // ============== ITEMS TABLE ==============
+    // Table Header
+    doc.fillColor(colors.primary).roundedRect(margin, currentY, contentWidth, 28, 3).fill();
+
+    const tableHeaders = [
+      { text: 'DESCRIPTION', width: 220, align: 'left' },
+      { text: 'DUE DATE', width: 90, align: 'center' },
+      { text: 'STATUS', width: 70, align: 'center' },
+      { text: 'AMOUNT', width: contentWidth - 380, align: 'right' }
+    ];
+
+    let headerX = margin + 10;
+    doc.fillColor(colors.white).fontSize(8).font('Helvetica-Bold');
+    tableHeaders.forEach(header => {
+      doc.text(header.text, headerX, currentY + 9, { width: header.width, align: header.align });
+      headerX += header.width;
+    });
+
+    currentY += 28;
+
+    // Table Row
+    doc.fillColor(colors.background).rect(margin, currentY, contentWidth, 35).fill();
+    doc.strokeColor(colors.border).lineWidth(0.5).rect(margin, currentY, contentWidth, 35).stroke();
+
+    let rowX = margin + 10;
+    
+    doc.fillColor(colors.text).fontSize(10).font('Helvetica-Bold')
+       .text(payment.title || 'Interior Design Service', rowX, currentY + 6, { width: 220 });
+    doc.fillColor(colors.textLight).fontSize(8).font('Helvetica')
+       .text(payment.description ? payment.description.substring(0, 40) + (payment.description.length > 40 ? '...' : '') : 'Stage payment', rowX, currentY + 20, { width: 220 });
+    rowX += 220;
+
+    doc.fillColor(colors.text).fontSize(9).font('Helvetica')
+       .text(new Date(payment.dueDate).toLocaleDateString('en-IN'), rowX, currentY + 12, { width: 90, align: 'center' });
+    rowX += 90;
+
+    const miniStatusColor = statusColors[payment.status] || colors.warning;
+    doc.fillColor(miniStatusColor).roundedRect(rowX + 5, currentY + 8, 55, 18, 2).fill();
+    doc.fillColor(colors.white).fontSize(7).font('Helvetica-Bold')
+       .text(payment.status.toUpperCase(), rowX + 5, currentY + 13, { width: 55, align: 'center' });
+    rowX += 70;
+
+    doc.fillColor(colors.primary).fontSize(11).font('Helvetica-Bold')
+       .text('INR ' + formatAmount(payment.amount), rowX, currentY + 12, { width: contentWidth - 380 - 10, align: 'right' });
+
+    currentY += 45;
+
+    // ============== TOTALS SECTION ==============
+    const totalsWidth = 200;
+    const totalsX = pageWidth - margin - totalsWidth;
+
+    doc.fillColor(colors.textLight).fontSize(9).font('Helvetica').text('Subtotal:', totalsX, currentY, { width: 90 });
+    doc.fillColor(colors.text).fontSize(9).font('Helvetica')
+       .text('INR ' + formatAmount(payment.amount), totalsX + 90, currentY, { width: totalsWidth - 90, align: 'right' });
+    currentY += 14;
+
+    doc.fillColor(colors.textLight).fontSize(9).font('Helvetica').text('Tax (0%):', totalsX, currentY, { width: 90 });
+    doc.fillColor(colors.text).fontSize(9).font('Helvetica')
+       .text('INR 0', totalsX + 90, currentY, { width: totalsWidth - 90, align: 'right' });
+    currentY += 16;
+
+    doc.strokeColor(colors.accent).lineWidth(1.5).moveTo(totalsX, currentY).lineTo(pageWidth - margin, currentY).stroke();
+    currentY += 8;
+
+    // Grand Total Box
+    doc.fillColor(colors.primary).roundedRect(totalsX - 5, currentY, totalsWidth + 5, 38, 4).fill();
+    doc.fillColor(colors.white).fontSize(9).font('Helvetica-Bold').text('TOTAL AMOUNT', totalsX + 5, currentY + 6, { width: totalsWidth - 10 });
+    doc.fillColor(colors.accent).fontSize(16).font('Helvetica-Bold')
+       .text('INR ' + formatAmount(payment.amount), totalsX + 5, currentY + 18, { width: totalsWidth - 15, align: 'right' });
+
+    currentY += 48;
+
+    // Paid date if applicable
+    if (payment.paidDate) {
+      doc.fillColor(colors.success).fontSize(9).font('Helvetica-Bold')
+         .text('Paid on: ' + new Date(payment.paidDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), 
+               totalsX, currentY, { width: totalsWidth, align: 'right' });
+      currentY += 18;
+    }
+
+    // ============== NOTES SECTION ==============
+    currentY += 10;
+    doc.fillColor(colors.accent).fontSize(9).font('Helvetica-Bold').text('NOTES & TERMS', margin, currentY);
+    currentY += 12;
+    doc.fillColor(colors.textLight).fontSize(8).font('Helvetica')
+       .text('• Payment due by specified date. Include invoice number in payment reference.', margin, currentY, { width: contentWidth });
+    currentY += 10;
+    doc.text('• For queries, please contact us. Thank you for choosing our interior design services.', margin, currentY, { width: contentWidth });
+
+    // ============== FOOTER ==============
+    const footerY = pageHeight - 55;
+    
+    doc.strokeColor(colors.border).lineWidth(0.5).moveTo(margin, footerY).lineTo(pageWidth - margin, footerY).stroke();
+    doc.fillColor(colors.accent).rect(pageWidth / 2 - 30, footerY - 1, 60, 2).fill();
+
+    // Bottom gold accent line
+    doc.fillColor(colors.accent).rect(0, pageHeight - 5, pageWidth, 5).fill();
+
     doc.end();
   } catch (error) {
     console.error('Error downloading invoice:', error);
