@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
 import { Plus, Building2, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { siteApi } from "../services/api";
 
 const ManageSites: React.FC = () => {
-  const { sites, activeSite, setActiveSite, openCreateSite } = useSite();
+  const { sites, activeSite, setActiveSite, openCreateSite, refreshSites } = useSite();
   const { user } = useAuth();
+  const [editingSite, setEditingSite] = useState<any | null>(null);
   const navigate = useNavigate();
   const isAdmin = user?.role === "ADMIN";
 
@@ -60,7 +62,7 @@ const ManageSites: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm p-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Sites</h2>
           
-          {sites.length === 0 ? (
+              {sites.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Building2 className="h-8 w-8 text-gray-400" />
@@ -74,7 +76,7 @@ const ManageSites: React.FC = () => {
                 Create Site
               </button>
             </div>
-          ) : (
+              ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sites.map((site) => {
                 const isCurrent = activeSite?.id === site.id;
@@ -87,7 +89,6 @@ const ManageSites: React.FC = () => {
                         : "bg-white border-gray-200 hover:border-gray-400 hover:shadow-sm"
                     }`}
                   >
-                    {/* Active Badge */}
                     {isCurrent && (
                       <div className="absolute top-1 right-3">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-600 text-white text-xs font-semibold">
@@ -125,11 +126,12 @@ const ManageSites: React.FC = () => {
                             {site.description}
                           </p>
                         )}
+                        <p className="text-sm text-gray-600 mt-2">Contract: <span className="font-semibold">₹{(site.contractValue ?? 0).toLocaleString("en-IN")}</span></p>
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-col gap-2">
                       {isCurrent ? (
                         <div className="w-full text-center py-2 text-sm font-medium text-gray-900">
                           Currently Active
@@ -142,6 +144,7 @@ const ManageSites: React.FC = () => {
                           Switch this Site
                         </button>
                       )}
+                      <button onClick={() => setEditingSite(site)} className="w-full px-2 py-2 bg-white border border-gray-200 rounded-lg text-sm">Edit</button>
                     </div>
                   </div>
                 );
@@ -150,8 +153,74 @@ const ManageSites: React.FC = () => {
           )}
         </div>
       </div>
+      {editingSite && <EditSiteModal site={editingSite} onClose={() => setEditingSite(null)} />}
     </div>
   );
 };
 
 export default ManageSites;
+ 
+// Edit Site Modal (renders when `editingSite` is set)
+const EditSiteModal: React.FC<{
+  site: any | null;
+  onClose: () => void;
+}> = ({ site, onClose }) => {
+  const { token, user } = useAuth();
+  const { refreshSites } = useSite();
+  const [name, setName] = useState(site?.name || "");
+  const [description, setDescription] = useState(site?.description || "");
+  const [contractValue, setContractValue] = useState<string>(site ? String(site.contractValue ?? 0) : "");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setName(site?.name || "");
+    setDescription(site?.description || "");
+    setContractValue(site ? String(site.contractValue ?? 0) : "");
+  }, [site]);
+
+  if (!site) return null;
+
+  const isAdmin = user?.role === "ADMIN";
+  if (!isAdmin) return null;
+
+  const save = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      await siteApi.updateSite(site.id, { name, description, contractValue: Number(String(contractValue).replace(/,/g, "") || 0) }, token);
+      await refreshSites();
+      onClose();
+    } catch (err) {
+      console.error("Failed to update site", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Edit site</h3>
+          <button onClick={onClose} className="p-1 text-gray-500">✕</button>
+        </div>
+        <label className="block mb-3 text-sm">
+          Name
+          <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" />
+        </label>
+        <label className="block mb-3 text-sm">
+          Description
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" rows={3} />
+        </label>
+        <label className="block mb-4 text-sm">
+          Contract Value
+          <input value={contractValue} onChange={(e) => setContractValue(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" />
+        </label>
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="px-3 py-2 rounded-lg bg-gray-100">Cancel</button>
+          <button onClick={save} disabled={loading} className="px-4 py-2 rounded-lg bg-green-600 text-white">{loading ? 'Saving' : 'Save'}</button>
+        </div>
+      </div>
+    </div>
+  );
+};

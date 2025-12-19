@@ -50,6 +50,7 @@ export interface SiteDto {
   description?: string;
   image?: string;
   createdAt: string;
+  contractValue?: number;
 }
 
 export interface FeedUserDto {
@@ -292,6 +293,20 @@ export const siteApi = {
       site: SiteDto;
     }>("/sites", {
       method: "POST",
+      body,
+      token,
+    }),
+
+  updateSite: (siteId: string, body: { name?: string; description?: string; contractValue?: number }, token: string) =>
+    request<{ message: string; site: SiteDto }>(`/sites/${siteId}`, {
+      method: "PUT",
+      body,
+      token,
+    }),
+
+  updateContractValue: (siteId: string, body: { contractValue: number }, token: string) =>
+    request<{ message: string; site: SiteDto }>(`/sites/${siteId}/contract-value`, {
+      method: "PUT",
       body,
       token,
     }),

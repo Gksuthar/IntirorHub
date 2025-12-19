@@ -110,6 +110,39 @@ export const updateContractValue = async (req, res) => {
   }
 };
 
+// Admin: update site details (name, description, contractValue)
+export const updateSite = async (req, res) => {
+  try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Only admin can update site" });
+    }
+
+    const { siteId } = req.params;
+    const { name, description, contractValue } = req.body;
+
+    const update = {};
+    if (typeof name === "string" && name.trim()) update.name = name.trim();
+    if (typeof description === "string") update.description = description.trim() || undefined;
+    if (contractValue !== undefined) {
+      const num = Number(String(contractValue).replace(/,/g, "").trim());
+      if (Number.isNaN(num) || num < 0) {
+        return res.status(400).json({ message: "Invalid contractValue" });
+      }
+      update.contractValue = num;
+    }
+
+    const site = await Site.findByIdAndUpdate(siteId, update, { new: true });
+    if (!site) {
+      return res.status(404).json({ message: "Site not found" });
+    }
+
+    return res.json({ message: "Site updated", site: sanitizeSite(site) });
+  } catch (error) {
+    console.error("updateSite error", error);
+    return res.status(500).json({ message: "Unable to update site" });
+  }
+};
+
 export default {
   listSites,
   createSite,

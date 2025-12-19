@@ -8,6 +8,7 @@ export interface Site {
   name: string;
   description?: string;
   image?: string;
+  contractValue?: number;
   createdAt: string;
 }
 
@@ -24,6 +25,7 @@ interface SiteContextValue {
   setActiveSite: (siteId: string) => void;
   addSite: (input: CreateSiteInput) => Promise<void>;
   openCreateSite: () => void;
+  refreshSites: () => Promise<void>;
 }
 
 const SiteContext = createContext<SiteContextValue | undefined>(undefined);
@@ -46,8 +48,7 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
 
   const activeKey = useMemo(() => (userKey ? buildStorageKey(userKey, "active-site") : null), [userKey]);
 
-  useEffect(() => {
-    const fetchSites = async () => {
+  const fetchSites = async () => {
       if (!user || !token) {
         setSites([]);
         setActiveSiteId(null);
@@ -61,6 +62,7 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
           name: site.name,
           description: site.description,
           image: site.image,
+          contractValue: (site as any).contractValue ?? 0,
           createdAt: site.createdAt,
         }));
 
@@ -80,8 +82,9 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
         setSites([]);
         setActiveSiteId(null);
       }
-    };
+  };
 
+  useEffect(() => {
     fetchSites();
   }, [activeKey, token, user]);
 
@@ -115,6 +118,7 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
           name: response.site.name,
           description: response.site.description,
           image: response.site.image,
+          contractValue: (response.site as any).contractValue ?? 0,
           createdAt: response.site.createdAt,
         };
 
@@ -158,6 +162,7 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
       setActiveSite: setActiveSiteId,
       addSite,
       openCreateSite,
+      refreshSites: fetchSites,
     }),
     [activeSite, addSite, openCreateSite, sites]
   );

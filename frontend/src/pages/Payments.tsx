@@ -194,14 +194,14 @@ const Payments: React.FC = () => {
     }
   };
 
-  const contractValue = payments.reduce((sum, p) => sum + p.amount, 0);
+  const siteContractValue = activeSite?.contractValue ?? null;
+  const contractValue = siteContractValue ?? payments.reduce((sum, p) => sum + p.amount, 0);
   const receivedAmount = payments
     .filter((p) => p.status === "paid")
     .reduce((sum, p) => sum + p.amount, 0);
-  const pendingAmount = contractValue - receivedAmount;
-  const progressPercentage = contractValue > 0 
-    ? Math.round((receivedAmount / contractValue) * 100) 
-    : 0;
+  const pendingAmount = Math.max(0, contractValue - receivedAmount);
+  const rawPercent = contractValue > 0 ? Math.round((receivedAmount / contractValue) * 100) : 0;
+  const progressPercentage = Math.min(100, Math.max(0, rawPercent));
   const overdueCount = payments.filter((p) => p.status === "overdue").length;
 
   return (
