@@ -7,6 +7,7 @@ import {
   Send,
   Plus,
   X,
+  Loader2,
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
@@ -19,6 +20,8 @@ const Payments: React.FC = () => {
   const [payments, setPayments] = useState<PaymentDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [remindingPaymentId, setRemindingPaymentId] = useState<string | null>(null);
+  const [reminderModal, setReminderModal] = useState<{ show: boolean; message?: string }>({ show: false });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -48,7 +51,6 @@ const Payments: React.FC = () => {
     if (activeSite && token) {
       loadPayments();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSite, token]);
 
   const handleAddPayment = async (e: React.FormEvent) => {
@@ -72,7 +74,7 @@ const Payments: React.FC = () => {
       loadPayments();
     } catch (error) {
       console.error("Error adding payment:", error);
-      alert("Failed to add payment");
+      showToast("Failed to add payment", "error");
     }
   };
 
@@ -84,7 +86,7 @@ const Payments: React.FC = () => {
       loadPayments();
     } catch (error) {
       console.error("Error marking payment as paid:", error);
-      alert("Failed to mark payment as paid");
+      showToast("Failed to mark payment as paid", "error");
     }
   };
 
@@ -92,11 +94,16 @@ const Payments: React.FC = () => {
     if (!token || !canManagePayments) return;
 
     try {
+      setRemindingPaymentId(paymentId);
       const response = await paymentApi.sendReminder(paymentId, token);
-      alert(response.message);
+      setReminderModal({ show: true, message: response.message || "Reminder sent" });
+      setTimeout(() => setReminderModal({ show: false }), 2500);
     } catch (error) {
       console.error("Error sending reminder:", error);
-      alert("Failed to send reminder");
+      showToast("Failed to send reminder", "error");
+    }
+    finally {
+      setRemindingPaymentId(null);
     }
   };
 
@@ -108,11 +115,11 @@ const Payments: React.FC = () => {
   const getStatusColor = (status: PaymentDto["status"]) => {
     switch (status) {
       case "paid":
-        return "text-green-600";
+        return "inline-flex items-center bg-emerald-50 text-emerald-700 p-1 rounded-lg text-xs font-medium mt-1";
       case "due":
-        return "text-orange-500";
+        return "inline-flex items-center bg-amber-50 text-amber-700 p-1 rounded-lg text-xs font-medium mt-1";
       case "overdue":
-        return "text-red-600";
+        return "inline-flex items-center px-2 py-1 bg-red-50 text-red-700 rounded-lg text-xs font-medium mt-1";
     }
   };
 
@@ -131,6 +138,62 @@ const Payments: React.FC = () => {
     return `₹${amount.toLocaleString("en-IN")}`;
   };
 
+  // Simple in-page toast (no external deps)
+  const showToast = (message: string, type: "info" | "success" | "error" = "info") => {
+    try {
+      const containerId = "site-zero-toast-container";
+      let container = document.getElementById(containerId);
+      if (!container) {
+        container = document.createElement("div");
+        container.id = containerId;
+        container.style.position = "fixed";
+        container.style.right = "16px";
+        container.style.bottom = "16px";
+        container.style.zIndex = "9999";
+        document.body.appendChild(container);
+      }
+
+      const toast = document.createElement("div");
+      toast.className = `mb-2 max-w-xs rounded-lg p-3 text-sm shadow-lg text-white`;
+      toast.style.opacity = "0";
+      toast.style.transition = "opacity 200ms ease, transform 200ms ease";
+      toast.style.transform = "translateY(8px)";
+      if (type === "success") {
+        toast.style.background = "#059669"; // green-600
+      } else if (type === "error") {
+        toast.style.background = "#dc2626"; // red-600
+      } else {
+        toast.style.background = "#374151"; // gray-700
+      }
+      toast.textContent = message;
+
+      container.appendChild(toast);
+
+      // animate in
+      requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateY(0)";
+      });
+
+      // remove after 3s
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+        setTimeout(() => {
+          try {
+            container?.removeChild(toast);
+          } catch (e) {}
+        }, 200);
+      }, 3000);
+    } catch (e) {
+      // fallback
+      try {
+        // eslint-disable-next-line no-alert
+        alert(message);
+      } catch (_) {}
+    }
+  };
+
   const contractValue = payments.reduce((sum, p) => sum + p.amount, 0);
   const receivedAmount = payments
     .filter((p) => p.status === "paid")
@@ -144,10 +207,8 @@ const Payments: React.FC = () => {
   return (
 <div className="min-h-screen pt-20 pb-32 px-4 md:px-6">
       <div className="max-w-md mx-auto">
-        {/* Active Project Header */}
 <div className="absolute bottom-0 right-0 mb-6 flex items-center justify-between">
          
-          {/* Floating Add Payment Button (Gmail style) */}
 {isAdmin && (
   <button
     onClick={() => setShowAddForm(true)}
@@ -214,8 +275,16 @@ bg-gray-800
             <p className="text-gray-500">Loading payments...</p>
           </div>
         )}
+        {/* Reminder confirmation modal */}
+        {reminderModal.show && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-5 text-center shadow-lg mx-4 pointer-events-auto">
+              <h3 className="text-md font-semibold mb-1">Reminder sent</h3>
+              <p className="text-sm text-gray-600">{reminderModal.message}</p>
+            </div>
+          </div>
+        )}
 
-        {/* Empty State */}
         {!loading && payments.length === 0 && (
           <div className="text-center py-8">
             <p className="text-gray-500">No payments found</p>
@@ -285,12 +354,17 @@ bg-gray-800
                   {canManagePayments && (
                     <button
                       onClick={() => handleRemind(payment._id)}
+                      disabled={remindingPaymentId === payment._id}
                       className={`${
                         isAdmin ? "flex-1" : "w-full"
-                      } flex items-center justify-center gap-2 px-4 py-3.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium text-xs border border-gray-300 transition-colors`}
+                      } flex items-center justify-center gap-2 px-4 py-3.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium text-xs border border-gray-300 transition-colors ${remindingPaymentId === payment._id ? 'opacity-70 cursor-wait' : ''}`}
                     >
-                      <Send className="h-4 w-4" />
-                      Remind
+                      {remindingPaymentId === payment._id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                      {remindingPaymentId === payment._id ? 'Sending...' : 'Remind'}
                     </button>
                   )}
                   {!canManagePayments && (
@@ -358,7 +432,7 @@ bg-gray-800
                   <input
                     type="number"
                     required
-                    min="0"
+                    min={0}
                     step="0.01"
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}

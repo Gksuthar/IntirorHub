@@ -89,8 +89,8 @@ const ManageSites: React.FC = () => {
                   >
                     {/* Active Badge */}
                     {isCurrent && (
-                      <div className="absolute top-3 right-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-900 text-white text-xs font-semibold">
+                      <div className="absolute top-1 right-3">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-600 text-white text-xs font-semibold">
                           <Check className="h-3 w-3" />
                           Active
                         </span>
@@ -108,7 +108,7 @@ const ManageSites: React.FC = () => {
                           {site.name.slice(0, 2).toUpperCase()}
                         </span>
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 mt-2">
                         <h3
                           className={`font-semibold text-lg truncate ${
                             isCurrent ? "text-gray-900" : "text-gray-900"
@@ -137,9 +137,9 @@ const ManageSites: React.FC = () => {
                       ) : (
                         <button
                           onClick={() => setActiveSite(site.id)}
-                          className="w-full px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg font-medium transition-all"
+                          className="w-full px-2 py-2 bg-black hover:bg-gray-400 text-white rounded-lg font-sm transition-all"
                         >
-                          Switch to this Site
+                          Switch this Site
                         </button>
                       )}
                     </div>

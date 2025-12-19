@@ -254,6 +254,19 @@ export const userApi = {
       method: "GET",
       token,
     }),
+  updateUserSiteAccess: (
+    userId: string,
+    body: { siteIds: string[] },
+    token: string
+  ) =>
+    request<{
+      message: string;
+      user: { id: string; name: string; email: string; role: string; siteAccess: string[] };
+    }>(`/users/${userId}/site-access`, {
+      method: "PUT",
+      body,
+      token,
+    }),
 };
 
 export const siteApi = {
@@ -269,6 +282,7 @@ export const siteApi = {
     body: {
       name: string;
       description?: string;
+      contractValue:number;
       image?: string;
     },
     token: string

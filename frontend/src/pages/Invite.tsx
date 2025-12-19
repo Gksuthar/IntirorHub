@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi, ApiError, type UserRole, userApi } from "../services/api";
-import { Mail, User, Phone, Shield, Loader2, Users, Building2 } from "lucide-react";
+import {
+  Mail,
+  User,
+  Phone,
+  Shield,
+  Loader2,
+  Users,
+  Building2,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSite } from "../context/SiteContext";
 
@@ -11,9 +19,15 @@ interface CompanyUser {
   email: string;
   role: string;
   avatar: string;
+  siteAccessCount?: number;
+  siteAccess?: string[];
 }
 
-const roles: Array<{ value: Exclude<UserRole, "ADMIN">; label: string; description: string }> = [
+const roles: Array<{
+  value: Exclude<UserRole, "ADMIN">;
+  label: string;
+  description: string;
+}> = [
   { value: "MANAGER", label: "Manager", description: "Project management" },
   { value: "AGENT", label: "Agent", description: "Field execution" },
   { value: "CLIENT", label: "Client", description: "Project visibility" },
@@ -62,6 +76,8 @@ const Invite: React.FC = () => {
           email: u.email,
           role: u.role,
           avatar: u.avatar,
+          siteAccessCount: u.siteAccessCount ?? 0,
+          siteAccess: u.siteAccess ?? [],
         }));
         setProjectUsers(users);
       } catch (err) {
@@ -74,15 +90,63 @@ const Invite: React.FC = () => {
     loadUsers();
   }, [token]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const toggleSite = (siteId: string) => {
     setSelectedSites((prev) =>
-      prev.includes(siteId) ? prev.filter((id) => id !== siteId) : [...prev, siteId]
+      prev.includes(siteId)
+        ? prev.filter((id) => id !== siteId)
+        : [...prev, siteId]
     );
+  };
+
+  // Admin: edit existing user's site access
+  const [editingUser, setEditingUser] = useState<CompanyUser | null>(null);
+  const [editingSites, setEditingSites] = useState<string[]>([]);
+
+  const openEditSites = (member: CompanyUser) => {
+    setEditingUser(member);
+    setEditingSites(member.siteAccess ? [...member.siteAccess] : []);
+  };
+
+  const toggleEditingSite = (siteId: string) => {
+    setEditingSites((prev) =>
+      prev.includes(siteId)
+        ? prev.filter((id) => id !== siteId)
+        : [...prev, siteId]
+    );
+  };
+
+  const saveEditingSites = async () => {
+    if (!editingUser || !token) return;
+    try {
+      await userApi.updateUserSiteAccess(
+        editingUser.id,
+        { siteIds: editingSites },
+        token
+      );
+      setProjectUsers((prev) =>
+        prev.map((p) =>
+          p.id === editingUser.id
+            ? {
+                ...p,
+                siteAccess: [...editingSites],
+                siteAccessCount: editingSites.length,
+              }
+            : p
+        )
+      );
+      setEditingUser(null);
+      setEditingSites([]);
+    } catch (err) {
+      console.error("update user sites error", err);
+      // optionally show error to user
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -108,11 +172,14 @@ const Invite: React.FC = () => {
         token
       );
 
-      setSuccess("Invitation sent. The teammate receives a temporary password via email.");
+      setSuccess(
+        "Invitation sent. The teammate receives a temporary password via email."
+      );
       setFormData({ email: "", name: "", phone: "", role: roles[0].value });
       setSelectedSites([]);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Unable to send invite";
+      const message =
+        err instanceof ApiError ? err.message : "Unable to send invite";
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -123,10 +190,16 @@ const Invite: React.FC = () => {
     <div className="min-h-screen bg-white text-black">
       <div className="mx-auto w-full max-w-3xl px-4 pt-32 pb-16">
         <div className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.4em] text-gray-400">Invite team</p>
-          <h1 className="text-3xl font-semibold text-black">Add a teammate to your workspace</h1>
+          <p className="text-xs uppercase tracking-[0.4em] text-gray-400">
+            Invite team
+          </p>
+          <h1 className="text-3xl font-semibold text-black">
+            Add a teammate to your workspace
+          </h1>
           <p className="text-sm text-gray-500">
-            Choose the right role and the system generates a secure password automatically. The invitee receives an email with the credentials and your company details.
+            Choose the right role and the system generates a secure password
+            automatically. The invitee receives an email with the credentials
+            and your company details.
           </p>
         </div>
 
@@ -143,129 +216,148 @@ const Invite: React.FC = () => {
         )}
 
         {user?.role === "ADMIN" && (
-        <form onSubmit={handleSubmit} className="mt-8 space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-          <div className="grid gap-6 md:grid-cols-2">
-            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-              Teammate name
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Hasnen Agent"
-                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
-                />
-              </div>
-            </label>
-
-            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-              Phone (optional)
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="08003779983"
-                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
-                />
-              </div>
-            </label>
-          </div>
-
-          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-            Work email
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="hasnen+agent@gmail.com"
-                required
-                className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
-              />
-            </div>
-          </label>
-
-          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-            Role access
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-gray-200 bg-white py-3 px-4 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
-            >
-              {roles.map((role) => (
-                <option key={role.value} value={role.value}>
-                  {`${role.label} – ${role.description}`}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-            Site Access (Select one or more)
-            <div className="rounded-xl border border-gray-200 bg-white p-4 max-h-48 overflow-y-auto">
-              {sites.length === 0 ? (
-                <p className="text-sm text-gray-500">No sites available. Create a site first.</p>
-              ) : (
-                <div className="space-y-2">
-                  {sites.map((site) => (
-                    <label key={site.id} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition">
-                      <input
-                        type="checkbox"
-                        checked={selectedSites.includes(site.id)}
-                        onChange={() => toggleSite(site.id)}
-                        className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                      />
-                      <Building2 className="h-4 w-4 text-gray-400" />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{site.name}</div>
-                        {site.description && (
-                          <div className="text-xs text-gray-500">{site.description}</div>
-                        )}
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          </label>
-
-          <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-            <Shield className="mt-0.5 h-4 w-4 text-black" />
-            <p>
-              The invitee receives a secure, auto-generated password. Ask them to log in and change it after the first access for maximum safety.
-            </p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-xl bg-black py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-black/40 flex items-center justify-center gap-2"
+          <form
+            onSubmit={handleSubmit}
+            className="mt-8 space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-sm"
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Sending invite
-              </>
-            ) : (
-              "Send invite"
-            )}
-          </button>
-        </form>
+            <div className="grid gap-6 md:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                Teammate name
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Hasnen Agent"
+                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
+                  />
+                </div>
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+                Phone (optional)
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="08003779983"
+                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
+                  />
+                </div>
+              </label>
+            </div>
+
+            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+              Work email
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="hasnen+agent@gmail.com"
+                  required
+                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
+                />
+              </div>
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+              Role access
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-gray-200 bg-white py-3 px-4 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
+              >
+                {roles.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {`${role.label} – ${role.description}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+              Site Access (Select one or more)
+              <div className="rounded-xl border border-gray-200 bg-white p-4 max-h-48 overflow-y-auto">
+                {sites.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    No sites available. Create a site first.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {sites.map((site) => (
+                      <label
+                        key={site.id}
+                        className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedSites.includes(site.id)}
+                          onChange={() => toggleSite(site.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                        />
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-medium text-gray-900">
+                              {site.name}
+                            </div>
+                          </div>
+                          {site.description && (
+                            <div className="text-xs text-gray-500">
+                              {site.description}
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </label>
+
+            <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+              <Shield className="mt-0.5 h-4 w-4 text-black" />
+              <p>
+                The invitee receives a secure, auto-generated password. Ask them
+                to log in and change it after the first access for maximum
+                safety.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full rounded-xl bg-black py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-black/40 flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Sending invite
+                </>
+              ) : (
+                "Send invite"
+              )}
+            </button>
+          </form>
         )}
-             {/* Project Team Section */}
+        {/* Project Team Section */}
         <div className="mt-8 rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="flex items-center gap-3 p-6 border-b border-gray-100">
             <Users className="h-6 w-6 text-gray-600" />
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Project Team</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Project Team
+              </h2>
               <p className="text-sm text-gray-500">
-                {projectUsers.length} {projectUsers.length === 1 ? "Member" : "Members"}
+                {projectUsers.length}{" "}
+                {projectUsers.length === 1 ? "Member" : "Members"}
               </p>
             </div>
           </div>
@@ -280,32 +372,102 @@ const Invite: React.FC = () => {
                 No team members found.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projectUsers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4"
-                  >
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="h-12 w-12 rounded-full"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-gray-900">
-                        {member.name}
-                      </p>
-                      <p className="truncate text-xs text-gray-500">{member.email}</p>
-                      <span className="mt-1 inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-semibold uppercase text-white">
-                        {member.role}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+             <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  {projectUsers.map((member) => (
+    <div
+      key={member.id}
+      className="flex flex-col rounded-xl border border-gray-100 bg-gray-50 p-4 h-full"
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <img
+          src={member.avatar}
+          alt={member.name}
+          className="h-12 w-12 flex-shrink-0 rounded-full"
+        />
+        <div className="flex-1 min-w-0">
+          <p className="truncate text-sm font-semibold text-gray-900">
+            {member.name}
+          </p>
+          {user?.role === "ADMIN" && (
+            <span className="mt-1 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+              {member.siteAccessCount ?? 0} sites
+            </span>
+          )}
+          <p className="truncate text-xs text-gray-500 mt-1">
+            {member.email}
+          </p>
+        </div>
+      </div>
+
+      {/* Role badge and Manage button row */}
+      <div className="flex items-center justify-between mt-auto">
+        <span className="inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-semibold uppercase text-white">
+          {member.role}
+        </span>
+        {user?.role === "ADMIN" && (
+          <button
+            type="button"
+            onClick={() => openEditSites(member)}
+            className="rounded-md bg-white px-3 py-1 text-xs font-medium border border-gray-100 hover:bg-gray-50 transition-colors"
+          >
+            Manage sites
+          </button>
+        )}
+      </div>
+    </div>
+  ))}
+</div>
             )}
           </div>
         </div>
+        {/* Edit Sites Modal */}
+        {editingUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-md rounded-xl bg-white p-6">
+              <h3 className="text-lg font-semibold">
+                Manage sites for {editingUser.name}
+              </h3>
+              <div className="mt-4 max-h-64 overflow-y-auto">
+                {sites.length === 0 ? (
+                  <p className="text-sm text-gray-500">No sites available.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {sites.map((s) => (
+                      <label key={s.id} className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={editingSites.includes(s.id)}
+                          onChange={() => toggleEditingSite(s.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-black"
+                        />
+                        <div className="text-sm">{s.name}</div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingUser(null);
+                    setEditingSites([]);
+                  }}
+                  className="rounded-xl px-4 py-2 border"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveEditingSites}
+                  className="rounded-xl bg-black px-4 py-2 text-white"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

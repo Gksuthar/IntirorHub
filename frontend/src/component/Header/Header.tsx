@@ -123,7 +123,7 @@ const Header: React.FC = () => {
                 SiteZero
               </span>
               <span className="text-[10px] text-gray-400 font-medium -mt-1">
-                Interior Management
+                SITEZERO Management
               </span>
             </div>
           </Link>

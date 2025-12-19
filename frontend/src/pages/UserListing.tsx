@@ -75,12 +75,9 @@ const UserListing: React.FC = () => {
                   </div>
                   
                   {/* Role Badge */}
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">
-                      {user.role}
-                    </span>
-                    <span className="text-xs text-gray-500">{user.siteAccessCount ?? 0} sites</span>
-                  </div>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">
+                    {user.role}
+                  </span>
                   
                   {/* Joined Date */}
                   <p className="text-xs text-gray-400 mt-3">

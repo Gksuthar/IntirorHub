@@ -4,12 +4,13 @@ import { X, UploadCloud, Image as ImageIcon } from "lucide-react";
 interface CreateSiteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (input: { name: string; description?: string; image?: string }) => void | Promise<void>;
+  onCreate: (input: { name: string; description?: string; image?: string,contractValue : number; }) => void | Promise<void>;
 }
 
 const CreateSiteModal: React.FC<CreateSiteModalProps> = ({ isOpen, onClose, onCreate }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [contractValue, setcontractValue] = useState<string>("");
   const [imageData, setImageData] = useState<string | undefined>(undefined);
   const [imageName, setImageName] = useState<string>("");
   const [preview, setPreview] = useState<string | undefined>(undefined);
@@ -20,6 +21,7 @@ const CreateSiteModal: React.FC<CreateSiteModalProps> = ({ isOpen, onClose, onCr
     if (isOpen) {
       setName("");
       setDescription("");
+      setcontractValue("")
       setImageData(undefined);
       setPreview(undefined);
       setImageName("");
@@ -57,11 +59,14 @@ const CreateSiteModal: React.FC<CreateSiteModalProps> = ({ isOpen, onClose, onCr
     }
 
     try {
+      
       setSubmitting(true);
+      const numericcontractValue = contractValue ? Number(contractValue.toString().replace(/,/g, "").trim()) : 0;
       await Promise.resolve(
         onCreate({
           name: name.trim(),
           description: description.trim() ? description.trim() : undefined,
+          contractValue : numericcontractValue,
           image: imageData,
         })
       );
@@ -106,6 +111,18 @@ const CreateSiteModal: React.FC<CreateSiteModalProps> = ({ isOpen, onClose, onCr
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Share the location, scope, or phase of this site."
               rows={3}
+              className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
+            Site contractValue
+            <input
+              type = 'number'
+              value={contractValue}
+              onChange={(event) => setcontractValue(event.target.value)}
+              placeholder="add contractValue of your site."
+              rows={1}
               className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-black focus:ring-2 focus:ring-black/10"
             />
           </label>

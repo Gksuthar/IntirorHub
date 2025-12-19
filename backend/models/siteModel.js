@@ -15,6 +15,10 @@ const SiteSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    contractValue: {
+      type: Number,
+      default: 0,
+    },
     companyName: {
       type: String,
       required: true,

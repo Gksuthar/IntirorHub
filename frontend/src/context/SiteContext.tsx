@@ -15,6 +15,7 @@ interface CreateSiteInput {
   name: string;
   description?: string;
   image?: string;
+  contractValue?: number;
 }
 
 interface SiteContextValue {
@@ -98,10 +99,12 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
+        console.debug('addSite payload:', input);
         const response = await siteApi.createSite(
           {
             name: input.name,
             description: input.description,
+            contractValue: input.contractValue ?? 0,
             image: input.image,
           },
           token

@@ -1,29 +1,4 @@
-// List all users related to the current user's parentId or their own id
-export const listRelatedUsers = async (req, res) => {
-  try {
-    // All users can access this endpoint
-    // Show all users in the same company
-    const companyName = req.user.companyName;
-    const members = await userModel.find({ companyName }).select("name email role companyName createdAt siteAccess");
 
-    const payload = members.map((member) => ({
-      id: member._id,
-      name: member.name || member.email,
-      email: member.email,
-      role: member.role,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
-        member.email || member.name || member.companyName || "User"
-      )}`,
-      joinedAt: member.createdAt,
-      siteAccessCount: member.siteAccess ? member.siteAccess.length ?? 0 : 0,
-    }));
-
-    return res.status(200).json({ users: payload });
-  } catch (error) {
-    console.error("listRelatedUsers error", error);
-    return res.status(500).json({ message: "Unable to fetch related users" });
-  }
-};
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
@@ -162,7 +137,6 @@ export const inviteUser = async (req, res) => {
     }
 
     const { email, name, role, phone, siteIds } = req.body;
-
     if (!email || !role) {
       return res.status(400).json({ message: "Email and role are required" });
     }
@@ -222,7 +196,7 @@ export const inviteUser = async (req, res) => {
 
 export const listCompanyUsers = async (req, res) => {
   try {
-    // Allow ADMIN, MANAGER, and AGENT to view user listing
+   
     if (!["ADMIN", "MANAGER", "AGENT"].includes(req.user.role)) {
       return res.status(403).json({ message: "You don't have permission to view users" });
     }
@@ -241,12 +215,77 @@ export const listCompanyUsers = async (req, res) => {
       )}`,
       joinedAt: member.createdAt,
       siteAccessCount: member.siteAccess ? member.siteAccess.length ?? 0 : 0,
+      siteAccess: member.siteAccess ? member.siteAccess.map((id) => id.toString()) : [],
     }));
 
     return res.status(200).json({ users: payload });
   } catch (error) {
     console.error("listCompanyUsers error", error);
     return res.status(500).json({ message: "Unable to fetch users" });
+  }
+};
+
+// List all users related to the current user's parentId or their own id
+export const listRelatedUsers = async (req, res) => {
+  try {
+    const companyName = req.user.companyName;
+    const members = await userModel.find({ companyName }).select("name email role companyName createdAt siteAccess");
+
+    const payload = members.map((member) => ({
+      id: member._id,
+      name: member.name || member.email,
+      email: member.email,
+      role: member.role,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+        member.email || member.name || member.companyName || "User"
+      )}`,
+      joinedAt: member.createdAt,
+      siteAccessCount: member.siteAccess ? member.siteAccess.length ?? 0 : 0,
+    }));
+
+    return res.status(200).json({ users: payload });
+  } catch (error) {
+    console.error("listRelatedUsers error", error);
+    return res.status(500).json({ message: "Unable to fetch related users" });
+  }
+};
+
+export const updateUserSiteAccess = async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admins can update user site access' });
+    }
+
+    const { userId } = req.params;
+    const { siteIds } = req.body;
+
+    if (!Array.isArray(siteIds)) {
+      return res.status(400).json({ message: 'siteIds must be an array' });
+    }
+
+    const user = await userModel.findByIdAndUpdate(
+      userId,
+      { siteAccess: siteIds },
+      { new: true }
+    ).select('name email role companyName createdAt siteAccess');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json({
+      message: 'User site access updated',
+      user: {
+        id: user._id,
+        name: user.name || user.email,
+        email: user.email,
+        role: user.role,
+        siteAccess: user.siteAccess ? user.siteAccess.map((id) => id.toString()) : [],
+      },
+    });
+  } catch (error) {
+    console.error('updateUserSiteAccess error', error);
+    return res.status(500).json({ message: 'Unable to update user site access' });
   }
 };
 
@@ -346,6 +385,7 @@ export default {
   getProfile,
   inviteUser,
   listCompanyUsers,
+  listRelatedUsers,
   verifyOtp,
   resendOtp,
 };
