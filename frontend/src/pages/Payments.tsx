@@ -215,7 +215,7 @@ const Payments: React.FC = () => {
     title="Add Payment"
     className="
       fixed
-      bottom-24   /* 👈 bottom navbar ke upar */
+      bottom-24   
       right-5
       z-50
       p-4

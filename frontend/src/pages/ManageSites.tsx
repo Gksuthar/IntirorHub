@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { siteApi } from "../services/api";
 
 const ManageSites: React.FC = () => {
-  const { sites, activeSite, setActiveSite, openCreateSite, refreshSites } = useSite();
+  const { sites, activeSite, setActiveSite, openCreateSite } = useSite();
   const { user } = useAuth();
   const [editingSite, setEditingSite] = useState<any | null>(null);
   const navigate = useNavigate();
