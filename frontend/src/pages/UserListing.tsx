@@ -5,7 +5,7 @@ import { Mail, User } from "lucide-react";
 
 const UserListing: React.FC = () => {
   const { token } = useAuth();
-  const { users, loading, error } = useRelatedUsers(token);
+  const { users, loading, error } = useRelatedUsers(token ?? undefined);
 
   if (loading) {
     return (
