@@ -7,6 +7,7 @@ export interface RelatedUser {
   role: string;
   avatar: string;
   joinedAt: string;
+  siteAccessCount?: number;
 }
 
 export function useRelatedUsers(token: string | undefined) {

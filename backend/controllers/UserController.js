@@ -4,7 +4,7 @@ export const listRelatedUsers = async (req, res) => {
     // All users can access this endpoint
     // Show all users in the same company
     const companyName = req.user.companyName;
-    const members = await userModel.find({ companyName }).select("name email role companyName createdAt");
+    const members = await userModel.find({ companyName }).select("name email role companyName createdAt siteAccess");
 
     const payload = members.map((member) => ({
       id: member._id,
@@ -15,6 +15,7 @@ export const listRelatedUsers = async (req, res) => {
         member.email || member.name || member.companyName || "User"
       )}`,
       joinedAt: member.createdAt,
+      siteAccessCount: member.siteAccess ? member.siteAccess.length ?? 0 : 0,
     }));
 
     return res.status(200).json({ users: payload });
@@ -228,7 +229,7 @@ export const listCompanyUsers = async (req, res) => {
 
     const members = await userModel
       .find({ companyName: req.user.companyName })
-      .select("name email role companyName createdAt");
+      .select("name email role companyName createdAt siteAccess");
 
     const payload = members.map((member) => ({
       id: member._id,
@@ -239,6 +240,7 @@ export const listCompanyUsers = async (req, res) => {
         member.email || member.name || member.companyName || "User"
       )}`,
       joinedAt: member.createdAt,
+      siteAccessCount: member.siteAccess ? member.siteAccess.length ?? 0 : 0,
     }));
 
     return res.status(200).json({ users: payload });

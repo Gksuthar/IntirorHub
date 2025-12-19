@@ -87,6 +87,24 @@ export interface CompanyUserDto {
   joinedAt?: string;
 }
 
+export interface PaymentDto {
+  _id: string;
+  title: string;
+  description: string;
+  amount: number;
+  dueDate: string;
+  status: 'paid' | 'due' | 'overdue';
+  paidDate?: string;
+  siteId: string;
+  createdBy: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 const buildHeaders = (token?: string, hasBody = false): HeadersInit => {
   const headers: HeadersInit = {};
@@ -305,4 +323,55 @@ export const feedApi = {
       method: "GET",
       token,
     }),
+};
+
+export const paymentApi = {
+  addPayment: (
+    body: {
+      title: string;
+      description: string;
+      amount: number;
+      dueDate: string;
+      siteId: string;
+    },
+    token: string
+  ) =>
+    request<{
+      message: string;
+      payment: PaymentDto;
+    }>("/payments/add", {
+      method: "POST",
+      body,
+      token,
+    }),
+
+  getPaymentsBySite: (siteId: string, token: string) =>
+    request<{
+      payments: PaymentDto[];
+    }>(`/payments/site/${siteId}`, {
+      method: "GET",
+      token,
+    }),
+
+  markAsPaid: (paymentId: string, token: string) =>
+    request<{
+      message: string;
+      payment: PaymentDto;
+    }>(`/payments/${paymentId}/paid`, {
+      method: "PUT",
+      token,
+    }),
+
+  sendReminder: (paymentId: string, token: string) =>
+    request<{
+      message: string;
+      clientCount: number;
+    }>(`/payments/${paymentId}/remind`, {
+      method: "POST",
+      token,
+    }),
+
+  downloadInvoice: (paymentId: string, token: string) => {
+    window.open(`${API_BASE_URL}/payments/${paymentId}/invoice?token=${token}`, '_blank');
+  },
 };

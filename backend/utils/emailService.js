@@ -410,3 +410,24 @@ The SiteZero Team
     text,
   });
 }
+
+/**
+ * Generic function to send email
+ * @param {string} to - Recipient email address
+ * @param {string} subject - Email subject
+ * @param {string} html - Email HTML content
+ */
+export async function sendEmail(to, subject, html) {
+  const transporter = createEmailTransporter();
+  if (!transporter) {
+    console.warn("Email transporter not configured. Email not sent to:", to);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: process.env.EMAIL,
+    to,
+    subject,
+    html,
+  });
+}
