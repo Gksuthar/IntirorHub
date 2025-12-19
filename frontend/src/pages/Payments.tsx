@@ -205,7 +205,7 @@ const Payments: React.FC = () => {
   const overdueCount = payments.filter((p) => p.status === "overdue").length;
 
   return (
-<div className="min-h-screen pt-20 pb-32 px-4 md:px-6">
+<div className="min-h-screen pt-20 pb-32  md:px-6">
       <div className="max-w-md mx-auto">
 <div className="absolute bottom-0 right-0 mb-6 flex items-center justify-between">
          
