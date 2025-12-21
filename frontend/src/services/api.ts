@@ -226,6 +226,17 @@ export const authApi = {
       method: "GET",
       token,
     }),
+  forgotPassword: (body: { email: string }) =>
+    request<{ message: string }>("/auth/forgot-password", {
+      method: "POST",
+      body,
+    }),
+
+  resetPassword: (body: { email: string; token: string; newPassword: string }) =>
+    request<{ message: string }>("/auth/reset-password", {
+      method: "POST",
+      body,
+    }),
 };
 
 export const userApi = {

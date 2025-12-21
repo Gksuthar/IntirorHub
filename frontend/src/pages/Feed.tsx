@@ -303,6 +303,7 @@ const Feed: React.FC = () => {
       setSelectedImages([]);
       setSelectedFiles([]);
       setActiveFilter("all");
+      setShowAddForm(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }

@@ -160,7 +160,7 @@ const Login: React.FC = () => {
 
             <div className="flex items-center justify-between text-sm text-gray-500">
               <span>Only admins can log in here.</span>
-              <a href="#" className="text-black font-medium">Need help?</a>
+              <Link to="/forgot-password" className="text-black font-medium">Forgot password?</Link>
             </div>
 
             <button

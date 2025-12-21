@@ -2,8 +2,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
-import { sendPasswordEmail, sendOtpEmail } from "../utils/emailService.js";
+import { sendPasswordEmail, sendOtpEmail, sendEmail } from "../utils/emailService.js";
 import { generateTemporaryPassword } from "../utils/password.js";
+import crypto from "crypto";
 
 const buildToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET || "development-secret", {
@@ -379,6 +380,71 @@ export const resendOtp = async (req, res) => {
   }
 };
 
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await userModel.findOne({ email }).select('+resetPasswordToken +resetPasswordTokenExpires');
+    if (!user) return res.status(404).json({ message: 'Account not found' });
+
+    const token = crypto.randomBytes(20).toString('hex');
+    const expires = new Date(Date.now() + (process.env.RESET_PASSWORD_EXPIRES_MS ? Number(process.env.RESET_PASSWORD_EXPIRES_MS) : 3600000)); // 1 hour default
+
+    user.resetPasswordToken = token;
+    user.resetPasswordTokenExpires = expires;
+    await user.save({ validateBeforeSave: false });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetLink = `${frontendUrl.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
+
+    const html = `<p>Hello ${user.name || user.email},</p>
+      <p>You requested a password reset. Click the link below to set a new password. The link expires in 1 hour.</p>
+      <p><a href="${resetLink}">Reset your password</a></p>
+      <p>If you didn't request this, ignore this email.</p>`;
+
+    await sendEmail(email, 'Reset your SiteZero password', html);
+
+    return res.status(200).json({ message: 'Password reset email sent' });
+  } catch (error) {
+    console.error('forgotPassword error', error);
+    return res.status(500).json({ message: 'Unable to send password reset email' });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, token, newPassword } = req.body;
+    if (!email || !token || !newPassword) return res.status(400).json({ message: 'Email, token and newPassword are required' });
+
+    const user = await userModel.findOne({ email }).select('+resetPasswordToken +resetPasswordTokenExpires +password');
+    if (!user) return res.status(404).json({ message: 'Account not found' });
+
+    if (!user.resetPasswordToken || !user.resetPasswordTokenExpires) {
+      return res.status(400).json({ message: 'No reset request found. Request a new reset email.' });
+    }
+
+    if (user.resetPasswordToken !== token) {
+      return res.status(400).json({ message: 'Invalid reset token' });
+    }
+
+    if (user.resetPasswordTokenExpires.getTime() < Date.now()) {
+      return res.status(400).json({ message: 'Reset token expired. Request a new reset email.' });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    user.resetPasswordToken = null;
+    user.resetPasswordTokenExpires = null;
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('resetPassword error', error);
+    return res.status(500).json({ message: 'Unable to reset password' });
+  }
+};
+
 export default {
   registerAdmin,
   loginUser,
@@ -388,4 +454,6 @@ export default {
   listRelatedUsers,
   verifyOtp,
   resendOtp,
+  forgotPassword,
+  resetPassword,
 };

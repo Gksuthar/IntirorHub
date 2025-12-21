@@ -9,6 +9,8 @@ import {
   Loader2,
   Users,
   Building2,
+  Plus,
+  X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSite } from "../context/SiteContext";
@@ -49,6 +51,8 @@ const Invite: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [projectUsers, setProjectUsers] = useState<CompanyUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   useEffect(() => {
     if (authLoading) {
@@ -216,10 +220,22 @@ const Invite: React.FC = () => {
         )}
 
         {user?.role === "ADMIN" && (
-          <form
-            onSubmit={handleSubmit}
-            className="mt-8 space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-sm"
-          >
+          <>
+            <div className="absolute bottom-0 right-0 mb-6 flex items-center justify-between">
+              <button
+                onClick={() => setShowAddForm((s) => !s)}
+                title="Invite Teammate"
+                className={`fixed bottom-24 right-5 z-50 p-4 bg-gray-800 text-white rounded-full shadow-xl transition active:scale-95`}
+              >
+                <Plus className="h-6 w-6" />
+              </button>
+            </div>
+
+            {showAddForm && (
+              <form
+                onSubmit={handleSubmit}
+                className="mt-8 space-y-8 rounded-3xl border border-gray-200 bg-white p-8 shadow-sm"
+              >
             <div className="grid gap-6 md:grid-cols-2">
               <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
                 Teammate name
@@ -331,21 +347,33 @@ const Invite: React.FC = () => {
               </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-xl bg-black py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-black/40 flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Sending invite
-                </>
-              ) : (
-                "Send invite"
-              )}
-            </button>
-          </form>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => setShowTemplateModal(true)}
+                className="w-full rounded-xl border border-gray-200 bg-white py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+              >
+                Preview invite template
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full rounded-xl bg-black py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-black/40 flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending invite
+                  </>
+                ) : (
+                  "Send invite"
+                )}
+              </button>
+            </div>
+              </form>
+            )}
+          </>
         )}
         {/* Project Team Section */}
         <div className="mt-8 rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -463,6 +491,55 @@ const Invite: React.FC = () => {
                   className="rounded-xl bg-black px-4 py-2 text-white"
                 >
                   Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Invite template modal */}
+        {showTemplateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-2xl rounded-xl bg-white p-6">
+              <div className="flex items-start justify-between">
+                <h3 className="text-lg font-semibold">Invitation email preview</h3>
+                <button
+                  onClick={() => setShowTemplateModal(false)}
+                  className="rounded-md p-1 text-gray-500 hover:bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-4 text-sm text-gray-700">
+                <p>Hello {formData.name || "[Name]"},</p>
+
+                <p>
+                  You have been invited to join <strong>Your Company</strong> on
+                  InteriorHub. Use the temporary password below to log in and set
+                  your own password.
+                </p>
+
+                <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+                  <p className="text-xs text-gray-500">Temporary password</p>
+                  <p className="mt-1 font-mono text-sm">{"[temporary-password]"}</p>
+                </div>
+
+                <p>
+                  Login link: <a className="text-blue-600">https://app.example.com/login</a>
+                </p>
+
+                <p className="text-xs text-gray-500">
+                  Note: The system generates a secure password automatically. The
+                  invitee should change it after first login.
+                </p>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  onClick={() => setShowTemplateModal(false)}
+                  className="rounded-xl px-4 py-2 border"
+                >
+                  Close
                 </button>
               </div>
             </div>

@@ -237,7 +237,7 @@ const Header: React.FC = () => {
                       }}
                       className="flex w-full items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
                     >
-                      <Sparkles className="h-4 w-4 text-gray-500" />
+                      <Building2 className="h-4 w-4 text-gray-500" />
                       <span>Create new site</span>
                     </button>
                   </div>
