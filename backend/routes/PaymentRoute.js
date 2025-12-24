@@ -16,6 +16,9 @@ router.put('/:paymentId/paid', auth, PaymentController.markAsPaid);
 // Send payment reminder (admin and manager)
 router.post('/:paymentId/remind', auth, PaymentController.sendReminder);
 
+// Admin can set arbitrary status
+router.put('/:paymentId/status', auth, PaymentController.updatePaymentStatus);
+
 // Download invoice
 router.get('/:paymentId/invoice', auth, PaymentController.downloadInvoice);
 

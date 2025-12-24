@@ -117,6 +117,35 @@ export const markAsPaid = async (req, res) => {
   }
 };
 
+// Update payment status (admin only)
+export const updatePaymentStatus = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    const { status } = req.body; // expected 'paid' | 'due' | 'overdue'
+
+    if (req.user.role !== 'ADMIN') return res.status(403).json({ message: 'Only admin can update payment status' });
+
+    const allowed = ['paid', 'due', 'overdue'];
+    if (!allowed.includes(status)) return res.status(400).json({ message: 'Invalid status' });
+
+    const payment = await Payment.findById(paymentId);
+    if (!payment) return res.status(404).json({ message: 'Payment not found' });
+
+    if (payment.companyName !== req.user.companyName) return res.status(403).json({ message: 'Payment does not belong to your company' });
+
+    payment.status = status;
+    if (status === 'paid') payment.paidDate = new Date();
+    else payment.paidDate = undefined;
+
+    await payment.save();
+
+    res.json({ message: 'Payment status updated', payment });
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+    res.status(500).json({ message: 'Error updating payment status', error: error.message });
+  }
+};
+
 // Send payment reminder
 export const sendReminder = async (req, res) => {
   try {

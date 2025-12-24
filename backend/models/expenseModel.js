@@ -28,6 +28,16 @@ const expenseSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
+  // Payment status for expense (paid/unpaid)
+  paymentStatus: {
+    type: String,
+    enum: ['paid', 'unpaid'],
+    default: 'unpaid'
+  },
+  paidDate: {
+    type: Date,
+    default: undefined
+  },
   invoice: {
     path: { type: String, default: null },
     filename: { type: String, default: null }

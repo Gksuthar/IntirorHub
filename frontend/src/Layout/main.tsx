@@ -1,10 +1,13 @@
 import Header from "../component/Header/Header";
 import { Outlet } from "react-router-dom";
-import { Home, CreditCard, FileText, TrendingUp, Rss } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Home, CreditCard, FileText, TrendingUp, Rss, Plus } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const MainLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user } = useAuth();
     
     const navLinks = [
         { path: "/", icon: Home, label: "Home" },
@@ -23,6 +26,28 @@ const MainLayout = () => {
         <>
             <Header />
             <Outlet />
+                        {/* Global floating add button (navigates to current section add modal) */}
+                        {user && (
+                            <button
+                                onClick={() => {
+                                    const p = location.pathname;
+                                    if (p.startsWith('/home/payments')) {
+                                        // if already on payments page, trigger in-page open
+                                        window.dispatchEvent(new CustomEvent('open-add-payment'));
+                                    } else if (p.startsWith('/home/expenses')) {
+                                        // if already on expenses page, trigger in-page open
+                                        window.dispatchEvent(new CustomEvent('open-add-expense'));
+                                    } else {
+                                        // navigate to expenses page with param for direct open
+                                        navigate('/home/expenses?openAdd=1');
+                                    }
+                                }}
+                                title="Add"
+                                className={"fixed bottom-24 right-5 z-50 p-4 bg-gray-800 hover:bg-border border-white text-white rounded-full shadow-xl transition active:scale-95"}
+                            >
+                                <Plus className="h-6 w-6" />
+                            </button>
+                        )}
             
             {/* Mobile Bottom Navigation */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50">

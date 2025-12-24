@@ -402,6 +402,16 @@ export const paymentApi = {
       token,
     }),
 
+  updateStatus: (paymentId: string, status: PaymentDto['status'], token: string) =>
+    request<{
+      message: string;
+      payment: PaymentDto;
+    }>(`/payments/${paymentId}/status`, {
+      method: "PUT",
+      body: { status },
+      token,
+    }),
+
   sendReminder: (paymentId: string, token: string) =>
     request<{
       message: string;
@@ -453,6 +463,12 @@ export const expenseApi = {
 
   approveExpense: (expenseId: string, action: 'approve' | 'reject', token: string) =>
     request<{ message: string; expense: any }>(`/expenses/${expenseId}/approve`, { method: 'PUT', body: { action }, token }),
+
+  updateExpenseStatus: (expenseId: string, status: 'pending' | 'approved' | 'rejected', token: string) =>
+    request<{ message: string; expense: any }>(`/expenses/${expenseId}/status`, { method: 'PUT', body: { status }, token }),
+
+  updatePaymentStatus: (expenseId: string, paymentStatus: 'paid' | 'unpaid', token: string) =>
+    request<{ message: string; expense: any }>(`/expenses/${expenseId}/payment-status`, { method: 'PUT', body: { paymentStatus }, token }),
 
   downloadInvoice: (expenseId: string, token: string) => {
     window.open(`${API_BASE_URL}/expenses/${expenseId}/invoice?token=${token}`, '_blank');

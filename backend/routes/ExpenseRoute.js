@@ -15,6 +15,10 @@ router.post('/:expenseId/upload-invoice', auth, ExpenseController.uploadInvoice)
 
 // Approve or reject (admin only)
 router.put('/:expenseId/approve', auth, ExpenseController.approveExpense);
+// Admin can set arbitrary status
+router.put('/:expenseId/status', auth, ExpenseController.updateExpenseStatus);
+// Admin can set payment status (paid/unpaid)
+router.put('/:expenseId/payment-status', auth, ExpenseController.updateExpensePaymentStatus);
 
 // Download invoice
 router.get('/:expenseId/invoice', auth, ExpenseController.downloadInvoice);

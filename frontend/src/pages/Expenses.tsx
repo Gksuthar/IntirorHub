@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useLocation } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -6,6 +7,9 @@ import {
   UploadCloud,
   X,
   Filter,
+  Loader2,
+  MoreVertical,
+  Check,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSite } from "../context/SiteContext";
@@ -22,7 +26,7 @@ interface ExpenseItem {
   status: string;
   paymentStatus: string;
   invoice?: { path?: string | null; filename?: string | null } | null;
-  createdBy?: { name?: string };
+  createdBy?: { name?: string; role?: string; _id?: string };
 }
 
 const Expenses: React.FC = () => {
@@ -37,16 +41,26 @@ const Expenses: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [items, setItems] = useState<ExpenseItem[]>([]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const { token, user } = useAuth();
   const { activeSite } = useSite();
 
-  const budgetData = {
-    total: 4500000,
-    used: 2847500,
-    remaining: 1652500,
-    due: 385000
-  };
+  const location = useLocation();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // FIXED: dynamic budget values
+  const totalBudget = activeSite?.contractValue ?? 0;
+  // Used Amount = Approved expenses that are paid
+  const usedAmount = items
+    .filter((e) => e.status === 'approved' && e.paymentStatus === 'paid')
+    .reduce((s, it) => s + (it.amount || 0), 0);
+  // Remaining Amount = Total budget - Used amount
+  const remainingAmount = Math.max(0, totalBudget - usedAmount);
+  // Due Amount = All unpaid expenses (regardless of approval status)
+  const dueAmount = items
+    .filter((e) => e.paymentStatus === 'unpaid')
+    .reduce((s, it) => s + (it.amount || 0), 0);
 
   const buildParams = () => {
     const params: Record<string, string> = {};
@@ -57,6 +71,38 @@ const Expenses: React.FC = () => {
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
     return params;
+  };
+
+  const isAdmin = (user?.role ?? '').toString().toUpperCase() === 'ADMIN';
+  const [updatingExpenseId, setUpdatingExpenseId] = useState<string | null>(null);
+
+  const handleUpdateExpenseStatus = async (expenseId: string, status: 'pending' | 'approved' | 'rejected') => {
+    if (!token) return;
+    try {
+      setUpdatingExpenseId(expenseId);
+      await expenseApi.updateExpenseStatus(expenseId, status, token);
+      await fetchExpenses();
+      setOpenMenuId(null);
+    } catch (err) {
+      console.error('Failed to update expense status', err);
+    } finally {
+      setUpdatingExpenseId(null);
+    }
+  };
+
+  const handleUpdatePaymentStatus = async (expenseId: string, paymentStatus: 'paid' | 'unpaid') => {
+    if (!token) return;
+    try {
+      setUpdatingExpenseId(expenseId);
+      // call new API method to update expense payment status
+      await expenseApi.updatePaymentStatus(expenseId, paymentStatus, token);
+      await fetchExpenses();
+      setOpenMenuId(null);
+    } catch (err) {
+      console.error('Failed to update payment status', err);
+    } finally {
+      setUpdatingExpenseId(null);
+    }
   };
 
   const fetchExpenses = async () => {
@@ -72,8 +118,36 @@ const Expenses: React.FC = () => {
 
   useEffect(() => {
     fetchExpenses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, activeSite, selectedCategory, statusFilter, minAmount, maxAmount, startDate, endDate]);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.get('openAdd')) {
+        setIsModalOpen(true);
+      }
+    } catch (e) {}
+  }, [location.search]);
+
+  useEffect(() => {
+    const handler = () => setIsModalOpen(true);
+    window.addEventListener('open-add-expense', handler as EventListener);
+    return () => window.removeEventListener('open-add-expense', handler as EventListener);
+  }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [openMenuId]);
 
   const filteredExpenses = items.filter((expense) => {
     const matchesSearch = expense.title
@@ -119,40 +193,39 @@ const Expenses: React.FC = () => {
           </div>
 
           {/* Budget Cards */}
-         <div className="grid grid-cols-2 gap-4 mb-6">
-  {/* Total Budget */}
-  <div className="text-center bg-white border border-gray-200 rounded-xl py-4 shadow-sm">
-    <p className="text-sm text-gray-500 mb-1">Total Budget</p>
-    <p className="text-xl font-semibold text-gray-900">
-      ₹{(budgetData.total / 100000).toFixed(0)}L
-    </p>
-  </div>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            {/* Total Budget */}
+            <div className="text-center bg-white border border-gray-200 rounded-xl py-4 shadow-sm">
+              <p className="text-sm text-gray-500 mb-1">Total Budget</p>
+              <p className="text-xl font-semibold text-gray-900">
+                ₹{(totalBudget / 100000).toFixed(2)}L
+              </p>
+            </div>
 
-  {/* Used Amount */}
-  <div className="text-center bg-white border border-gray-200 rounded-xl py-4 shadow-sm">
-    <p className="text-sm text-gray-500 mb-1">Used Amount</p>
-    <p className="text-xl font-semibold text-indigo-600">
-      ₹{(budgetData.used / 100000).toFixed(2)}L
-    </p>
-  </div>
+            {/* Used Amount */}
+            <div className="text-center bg-white border border-gray-200 rounded-xl py-4 shadow-sm">
+              <p className="text-sm text-gray-500 mb-1">Used Amount</p>
+              <p className="text-xl font-semibold text-gray-900">
+                ₹{(usedAmount / 100000).toFixed(2)}L
+              </p>
+            </div>
 
-  {/* Remaining Amount */}
-  <div className="text-center bg-white border border-gray-200 rounded-xl py-4 shadow-sm">
-    <p className="text-sm text-gray-500 mb-1">Remaining Amount</p>
-    <p className="text-xl font-semibold text-green-600">
-      ₹{(budgetData.remaining / 100000).toFixed(2)}L
-    </p>
-  </div>
+            {/* Remaining Amount */}
+            <div className="text-center bg-white border border-gray-200 rounded-xl py-4 shadow-sm">
+              <p className="text-sm text-gray-500 mb-1">Remaining Amount</p>
+              <p className="text-xl font-semibold text-green-600">
+                ₹{(remainingAmount / 100000).toFixed(2)}L
+              </p>
+            </div>
 
-  {/* Due Amount */}
-  <div className="text-center bg-white border border-gray-200 rounded-xl py-4 shadow-sm">
-    <p className="text-sm text-gray-500 mb-1">Due Amount</p>
-    <p className="text-xl font-semibold text-red-600">
-      ₹{(budgetData.due / 1000).toFixed(0)}K
-    </p>
-  </div>
-</div>
-
+            {/* Due Amount */}
+            <div className="text-center bg-white border border-gray-200 rounded-xl py-4 shadow-sm">
+              <p className="text-sm text-gray-500 mb-1">Due Amount</p>
+              <p className="text-xl font-semibold text-red-600">
+                ₹{(dueAmount / 100000).toFixed(2)}L
+              </p>
+            </div>
+          </div>
 
           {/* Period Tabs */}
           <div className="flex gap-2 mb-6">
@@ -287,7 +360,7 @@ const Expenses: React.FC = () => {
           {/* Add Expense Button */}
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors shadow-sm"
+            className="w-full bg-gray-800 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors shadow-sm"
           >
             <Plus className="h-5 w-5" />
             Add Expense
@@ -309,7 +382,7 @@ const Expenses: React.FC = () => {
               <p className="text-gray-500 text-sm mb-2">No expenses found</p>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="text-indigo-600 text-sm font-medium hover:underline"
+                className="text-gray-800 text-sm font-medium hover:underline"
               >
                 Add your first expense
               </button>
@@ -334,10 +407,77 @@ const Expenses: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-right flex-shrink-0 flex items-center gap-2">
                     <p className="text-lg font-bold text-gray-900">
                       ₹{expense.amount.toLocaleString('en-IN')}
                     </p>
+                    {/* Three Dot Menu */}
+                    <div className="relative" ref={openMenuId === expense._id ? menuRef : null}>
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === expense._id ? null : expense._id)}
+                        className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                        disabled={updatingExpenseId === expense._id}
+                      >
+                        <MoreVertical className="h-5 w-5 text-gray-600" />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {openMenuId === expense._id && (
+                        <div className="absolute right-0 top-8 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[160px]">
+                          {/* Status Section - Admin Only */}
+                          {isAdmin && (
+                            <div className="px-3 py-2 border-b border-gray-100">
+                              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Status</p>
+                              <button
+                                onClick={() => handleUpdateExpenseStatus(expense._id, 'pending')}
+                                disabled={updatingExpenseId === expense._id}
+                                className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 rounded flex items-center justify-between disabled:opacity-50"
+                              >
+                                <span>Pending</span>
+                                {expense.status === 'pending' && <Check className="h-4 w-4 text-indigo-600" />}
+                              </button>
+                              <button
+                                onClick={() => handleUpdateExpenseStatus(expense._id, 'approved')}
+                                disabled={updatingExpenseId === expense._id}
+                                className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 rounded flex items-center justify-between disabled:opacity-50"
+                              >
+                                <span>Approved</span>
+                                {expense.status === 'approved' && <Check className="h-4 w-4 text-indigo-600" />}
+                              </button>
+                              <button
+                                onClick={() => handleUpdateExpenseStatus(expense._id, 'rejected')}
+                                disabled={updatingExpenseId === expense._id}
+                                className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 rounded flex items-center justify-between disabled:opacity-50"
+                              >
+                                <span>Rejected</span>
+                                {expense.status === 'rejected' && <Check className="h-4 w-4 text-indigo-600" />}
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Payment Status Section - All Users */}
+                          <div className={`px-3 py-2 ${isAdmin ? '' : 'border-b-0'}`}>
+                            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Payment</p>
+                            <button
+                              onClick={() => handleUpdatePaymentStatus(expense._id, 'paid')}
+                              disabled={updatingExpenseId === expense._id}
+                              className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 rounded flex items-center justify-between disabled:opacity-50"
+                            >
+                              <span>Paid</span>
+                              {expense.paymentStatus === 'paid' && <Check className="h-4 w-4 text-green-600" />}
+                            </button>
+                            <button
+                              onClick={() => handleUpdatePaymentStatus(expense._id, 'unpaid')}
+                              disabled={updatingExpenseId === expense._id}
+                              className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 rounded flex items-center justify-between disabled:opacity-50"
+                            >
+                              <span>Unpaid</span>
+                              {expense.paymentStatus === 'unpaid' && <Check className="h-4 w-4 text-orange-600" />}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -417,6 +557,17 @@ const Expenses: React.FC = () => {
         </div>
       </div>
 
+      {/* Floating Add Expense Button */}
+      {isAdmin && (
+        <button
+          onClick={() => setIsModalOpen(true)}
+          title="Add Expense"
+          className="fixed bottom-24 right-5 z-50 p-4 bg-gray-800 hover:bg-gray-900 text-white rounded-full shadow-xl transition active:scale-95"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
+      
       {/* Add Expense Modal */}
       <AddExpenseModal
         isOpen={isModalOpen}

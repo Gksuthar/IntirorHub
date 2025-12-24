@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
+import { useLocation, useNavigate } from "react-router-dom";
 import { paymentApi } from "../services/api";
 import type { PaymentDto } from "../services/api";
 
@@ -21,6 +22,7 @@ const Payments: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [remindingPaymentId, setRemindingPaymentId] = useState<string | null>(null);
+  const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
   const [reminderModal, setReminderModal] = useState<{ show: boolean; message?: string }>({ show: false });
   const [formData, setFormData] = useState({
     title: "",
@@ -29,7 +31,7 @@ const Payments: React.FC = () => {
     dueDate: "",
   });
 
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = (user?.role ?? '').toString().toUpperCase() === 'ADMIN';
   const isManager = user?.role === "MANAGER";
   const canManagePayments = isAdmin || isManager;
 
@@ -53,6 +55,15 @@ const Payments: React.FC = () => {
     }
   }, [activeSite, token]);
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  
+
+  const closeAddModal = () => {
+    setShowAddForm(false);
+  };
+
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeSite || !token || !isAdmin) return;
@@ -70,7 +81,7 @@ const Payments: React.FC = () => {
       );
       
       setFormData({ title: "", description: "", amount: "", dueDate: "" });
-      setShowAddForm(false);
+      closeAddModal();
       loadPayments();
     } catch (error) {
       console.error("Error adding payment:", error);
@@ -87,6 +98,19 @@ const Payments: React.FC = () => {
     } catch (error) {
       console.error("Error marking payment as paid:", error);
       showToast("Failed to mark payment as paid", "error");
+    }
+  };
+
+  const handleUpdateStatus = async (paymentId: string, status: PaymentDto['status']) => {
+    if (!token || !isAdmin) return;
+    try {
+      setUpdatingPaymentId(paymentId);
+      await paymentApi.updateStatus(paymentId, status, token);
+      await loadPayments();
+    } catch (err) {
+      console.error('Failed to update status', err);
+    } finally {
+      setUpdatingPaymentId(null);
     }
   };
 
@@ -138,7 +162,6 @@ const Payments: React.FC = () => {
     return `₹${amount.toLocaleString("en-IN")}`;
   };
 
-  // Simple in-page toast (no external deps)
   const showToast = (message: string, type: "info" | "success" | "error" = "info") => {
     try {
       const containerId = "site-zero-toast-container";
@@ -207,32 +230,6 @@ const Payments: React.FC = () => {
   return (
 <div className="min-h-screen pt-20 pb-32 p-2 md:px-6">
       <div className="max-w-md mx-auto">
-<div className="absolute bottom-0 right-0 mb-6 flex items-center justify-between">
-         
-{isAdmin && (
-  <button
-    onClick={() => setShowAddForm(true)}
-    title="Add Payment"
-    className="
-      fixed
-      bottom-24   
-      right-5
-      z-50
-      p-4
-bg-gray-800
-      hover:bg-border border-white
-      text-white
-      rounded-full
-      shadow-xl
-      transition
-      active:scale-95
-    "
-  >
-    <Plus className="h-6 w-6" />
-  </button>
-)}
-
-        </div>
 
         {payments.length > 0 && (
           <p className="text-xs text-gray-400 mb-6">
@@ -355,8 +352,7 @@ bg-gray-800
                 </div>
               </div>
 
-
-
+             
               {payment.status === "paid" ? (
                 <button
                   onClick={() => handleDownloadInvoice(payment._id)}
@@ -414,7 +410,7 @@ bg-gray-800
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Add Payment</h3>
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => closeAddModal()}
                   className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 >
                   <X className="h-5 w-5 text-gray-500" />
@@ -482,7 +478,7 @@ bg-gray-800
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowAddForm(false)}
+                    onClick={() => closeAddModal()}
                     className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
                   >
                     Cancel
@@ -497,6 +493,28 @@ bg-gray-800
               </form>
             </div>
           </div>
+        )}
+        {isAdmin && (
+          <button
+            onClick={() => setShowAddForm(true)}
+            title="Add Payment"
+            className={`
+              fixed
+              bottom-24
+              right-5
+              z-50
+              p-4
+              bg-gray-800
+              hover:bg-border border-white
+              text-white
+              rounded-full
+              shadow-xl
+              transition
+              active:scale-95
+            `}
+          >
+            <Plus className="h-6 w-6" />
+          </button>
         )}
       </div>
     </div>
