@@ -7,7 +7,6 @@ import {
   UploadCloud,
   X,
   Filter,
-  Loader2,
   MoreVertical,
   Check,
 } from "lucide-react";

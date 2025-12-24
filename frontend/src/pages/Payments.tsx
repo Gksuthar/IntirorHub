@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
-import { useLocation, useNavigate } from "react-router-dom";
+import { /* useLocation, useNavigate, */ } from "react-router-dom";
 import { paymentApi } from "../services/api";
 import type { PaymentDto } from "../services/api";
 
@@ -22,7 +22,6 @@ const Payments: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [remindingPaymentId, setRemindingPaymentId] = useState<string | null>(null);
-  const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
   const [reminderModal, setReminderModal] = useState<{ show: boolean; message?: string }>({ show: false });
   const [formData, setFormData] = useState({
     title: "",
@@ -54,9 +53,6 @@ const Payments: React.FC = () => {
       loadPayments();
     }
   }, [activeSite, token]);
-
-  const location = useLocation();
-  const navigate = useNavigate();
 
   
 
@@ -101,18 +97,7 @@ const Payments: React.FC = () => {
     }
   };
 
-  const handleUpdateStatus = async (paymentId: string, status: PaymentDto['status']) => {
-    if (!token || !isAdmin) return;
-    try {
-      setUpdatingPaymentId(paymentId);
-      await paymentApi.updateStatus(paymentId, status, token);
-      await loadPayments();
-    } catch (err) {
-      console.error('Failed to update status', err);
-    } finally {
-      setUpdatingPaymentId(null);
-    }
-  };
+  
 
   const handleRemind = async (paymentId: string) => {
     if (!token || !canManagePayments) return;
