@@ -176,11 +176,11 @@ export const updateExpenseStatus = async (req, res) => {
 export const updateExpensePaymentStatus = async (req, res) => {
   try {
     const { expenseId } = req.params;
-    const { paymentStatus } = req.body; // 'paid' | 'unpaid'
+    const { paymentStatus } = req.body; // 'paid' | 'due'
 
     if (req.user.role !== 'ADMIN') return res.status(403).json({ message: 'Only admin can update payment status' });
 
-    const allowed = ['paid', 'unpaid'];
+    const allowed = ['paid', 'due'];
     if (!allowed.includes(paymentStatus)) return res.status(400).json({ message: 'Invalid payment status' });
 
     const expense = await Expense.findById(expenseId);

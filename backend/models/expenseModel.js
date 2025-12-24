@@ -28,11 +28,11 @@ const expenseSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
-  // Payment status for expense (paid/unpaid)
+  // Payment status for expense (paid/due)
   paymentStatus: {
     type: String,
-    enum: ['paid', 'unpaid'],
-    default: 'unpaid'
+    enum: ['paid', 'due'],
+    default: 'due'
   },
   paidDate: {
     type: Date,

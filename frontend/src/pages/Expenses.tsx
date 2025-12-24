@@ -56,9 +56,9 @@ const Expenses: React.FC = () => {
     .reduce((s, it) => s + (it.amount || 0), 0);
   // Remaining Amount = Total budget - Used amount
   const remainingAmount = Math.max(0, totalBudget - usedAmount);
-  // Due Amount = All unpaid expenses (regardless of approval status)
+  // Due Amount = All due expenses (regardless of approval status)
   const dueAmount = items
-    .filter((e) => e.paymentStatus === 'unpaid')
+    .filter((e) => e.paymentStatus === 'due')
     .reduce((s, it) => s + (it.amount || 0), 0);
 
   const buildParams = () => {
@@ -89,7 +89,7 @@ const Expenses: React.FC = () => {
     }
   };
 
-  const handleUpdatePaymentStatus = async (expenseId: string, paymentStatus: 'paid' | 'unpaid') => {
+  const handleUpdatePaymentStatus = async (expenseId: string, paymentStatus: 'paid' | 'due') => {
     if (!token) return;
     try {
       setUpdatingExpenseId(expenseId);
@@ -466,12 +466,12 @@ const Expenses: React.FC = () => {
                               {expense.paymentStatus === 'paid' && <Check className="h-4 w-4 text-green-600" />}
                             </button>
                             <button
-                              onClick={() => handleUpdatePaymentStatus(expense._id, 'unpaid')}
+                              onClick={() => handleUpdatePaymentStatus(expense._id, 'due')}
                               disabled={updatingExpenseId === expense._id}
                               className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 rounded flex items-center justify-between disabled:opacity-50"
                             >
-                              <span>Unpaid</span>
-                              {expense.paymentStatus === 'unpaid' && <Check className="h-4 w-4 text-orange-600" />}
+                              <span>Due</span>
+                              {expense.paymentStatus === 'due' && <Check className="h-4 w-4 text-orange-600" />}
                             </button>
                           </div>
                         </div>
@@ -487,9 +487,9 @@ const Expenses: React.FC = () => {
                       Paid
                     </span>
                   )}
-                  {expense.paymentStatus === 'unpaid' && (
+                  {expense.paymentStatus === 'due' && (
                     <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded">
-                      Unpaid
+                      Due
                     </span>
                   )}
                   {expense.status === 'approved' && (

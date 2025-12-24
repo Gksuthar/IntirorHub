@@ -467,7 +467,7 @@ export const expenseApi = {
   updateExpenseStatus: (expenseId: string, status: 'pending' | 'approved' | 'rejected', token: string) =>
     request<{ message: string; expense: any }>(`/expenses/${expenseId}/status`, { method: 'PUT', body: { status }, token }),
 
-  updatePaymentStatus: (expenseId: string, paymentStatus: 'paid' | 'unpaid', token: string) =>
+  updatePaymentStatus: (expenseId: string, paymentStatus: 'paid' | 'due', token: string) =>
     request<{ message: string; expense: any }>(`/expenses/${expenseId}/payment-status`, { method: 'PUT', body: { paymentStatus }, token }),
 
   downloadInvoice: (expenseId: string, token: string) => {
