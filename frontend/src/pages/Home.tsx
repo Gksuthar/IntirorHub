@@ -201,7 +201,8 @@ const Home: React.FC = () => {
             <div className="text-center">
               <p className="text-xs text-slate-400 mb-2">Budget</p>
               <p className="text-xl sm:text-2xl font-bold text-slate-900">₹{(usedAmount / 100000).toFixed(2)}L</p>
-              <p className="text-xs text-slate-400 mt-1">of ₹{(totalBudget / 100000).toFixed(2)}L</p>
+                <p className="text-xs text-slate-400 mt-1">of ₹{(totalBudget / 100000).toFixed(2)}L</p>
+                <p className="text-xs text-slate-400 mt-1">Paid: <span className="font-medium text-slate-900">₹{(usedPaid / 100000).toFixed(2)}L</span> • Remaining: <span className="font-medium text-green-600">₹{(remainingAmount / 100000).toFixed(2)}L</span> • Due: <span className="font-medium text-red-600">₹{(dueAmount / 100000).toFixed(2)}L</span></p>
             </div>
 
             {/* Approvals */}
