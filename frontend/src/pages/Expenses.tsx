@@ -176,20 +176,9 @@ const Expenses: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 w-full overflow-x-hidden pb-6">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 mt-16 ">
         <div className="w-full px-4 py-4">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-xs text-gray-500 text-right mb-1">ACTIVE SITE</p>
-              <select className="text-sm font-medium text-gray-900 border-none bg-transparent focus:outline-none cursor-pointer">
-                <option>{activeSite?.name || 'Lokes'}</option>
-              </select>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white font-semibold text-sm relative">
-              {user?.name?.substring(0, 2).toUpperCase() || 'RK'}
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-            </div>
-          </div>
+        
 
           {/* Budget Cards */}
           <div className="grid grid-cols-2 gap-4 mb-6">
