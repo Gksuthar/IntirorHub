@@ -1,19 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Plus,
   Search,
   FileText,
   UploadCloud,
 } from "lucide-react";
-
-// Mock context hooks for demo
-const useAuth = () => ({ token: 'demo-token', user: { role: 'MANAGER' } });
-const useSite = () => ({ activeSite: { id: '1', name: 'Sindhu Bhavan Road' } });
-const expenseApi = {
-  getExpensesBySite: async () => ({ expenses: [] }),
-  downloadInvoice: async () => {},
-  uploadInvoice: async () => {},
-};
+import { useAuth } from "../context/AuthContext";
+import { useSite } from "../context/SiteContext";
+import { expenseApi } from "../services/api";
 
 interface ExpenseItem {
   _id: string;
