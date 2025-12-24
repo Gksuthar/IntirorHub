@@ -6,6 +6,7 @@ import userRouter from "./routes/UserRoute.js";
 import siteRouter from "./routes/SiteRoute.js";
 import feedRouter from "./routes/FeedRoute.js";
 import paymentRouter from "./routes/PaymentRoute.js";
+import expenseRouter from "./routes/ExpenseRoute.js";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use("/api", userRouter);
 app.use("/api/sites", siteRouter);
 app.use("/api/feed", feedRouter);
 app.use("/api/payments", paymentRouter);
+app.use("/api/expenses", expenseRouter);
 
 app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });

@@ -415,3 +415,46 @@ export const paymentApi = {
     window.open(`${API_BASE_URL}/payments/${paymentId}/invoice?token=${token}`, '_blank');
   },
 };
+
+export const expenseApi = {
+  addExpense: (
+    body: {
+      title: string;
+      description?: string;
+      category: string;
+      amount: number;
+      dueDate: string;
+      siteId: string;
+      invoiceBase64?: string;
+      invoiceFilename?: string;
+    },
+    token: string
+  ) =>
+    request<{
+      message: string;
+      expense: any;
+    }>("/expenses/add", {
+      method: "POST",
+      body,
+      token,
+    }),
+
+  getExpensesBySite: (siteId: string, token: string, params?: Record<string, string>) => {
+    let q = '';
+    if (params) {
+      const parts = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+      if (parts.length) q = `?${parts.join('&')}`;
+    }
+    return request<{ expenses: any[] }>(`/expenses/site/${siteId}${q}`, { method: 'GET', token });
+  },
+
+  uploadInvoice: (expenseId: string, payload: { invoiceBase64: string; invoiceFilename: string }, token: string) =>
+    request<{ message: string; expense: any }>(`/expenses/${expenseId}/upload-invoice`, { method: 'POST', body: payload, token }),
+
+  approveExpense: (expenseId: string, action: 'approve' | 'reject', token: string) =>
+    request<{ message: string; expense: any }>(`/expenses/${expenseId}/approve`, { method: 'PUT', body: { action }, token }),
+
+  downloadInvoice: (expenseId: string, token: string) => {
+    window.open(`${API_BASE_URL}/expenses/${expenseId}/invoice?token=${token}`, '_blank');
+  }
+};
