@@ -215,7 +215,7 @@ const Expenses: React.FC = () => {
             </div>
           </div>
 
-          {/* Period Tabs */}
+          {/* Period Tabs
           <div className="flex gap-2 mb-6">
             {['Day', 'Week', 'Month', 'Year'].map((period) => (
               <button
@@ -229,7 +229,7 @@ const Expenses: React.FC = () => {
                 {period}
               </button>
             ))}
-          </div>
+          </div> */}
 
           {/* Category Dropdown */}
           <select

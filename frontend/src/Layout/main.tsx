@@ -22,25 +22,57 @@ const MainLayout = () => {
         return location.pathname.startsWith(path);
     };
 
+    const isHomePage = location.pathname === '/' || location.pathname === '/home';
+    const isAdmin = (user?.role ?? '').toString().toUpperCase() === 'ADMIN';
+    const isClient = (user?.role ?? '').toString().toUpperCase() === 'CLIENT';
+
+    const showToast = (message: string) => {
+        try {
+            const containerId = 'site-zero-toast-container';
+            let container = document.getElementById(containerId);
+            if (!container) {
+                container = document.createElement('div');
+                container.id = containerId;
+                container.style.position = 'fixed';
+                container.style.right = '16px';
+                container.style.bottom = '80px';
+                container.style.zIndex = '9999';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.background = '#111827';
+            toast.style.color = 'white';
+            toast.style.padding = '8px 12px';
+            toast.style.borderRadius = '8px';
+            toast.style.marginTop = '8px';
+            toast.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 200ms ease, transform 200ms ease';
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => { try { container?.removeChild(toast); } catch (e) {} }, 200); }, 3000);
+        } catch (e) {
+            try { alert(message); } catch (_) {}
+        }
+    };
+
     return (
         <>
             <Header />
-            <Outlet />
-                        {/* Global floating add button (navigates to current section add modal) */}
-                        {user && (
+            <div className="pb-32">
+                <Outlet />
+            </div>
+                        {user && !isHomePage && !isClient && (
                             <button
                                 onClick={() => {
                                     const p = location.pathname;
                                     if (p.startsWith('/home/payments')) {
-                                        // if already on payments page, trigger in-page open
-                                        window.dispatchEvent(new CustomEvent('open-add-payment'));
+                                        if (isAdmin) navigate('/home/payments?openAdd=1');
+                                        else showToast('Only admins can add payments');
                                     } else if (p.startsWith('/home/expenses')) {
-                                        // if already on expenses page, trigger in-page open
-                                        window.dispatchEvent(new CustomEvent('open-add-expense'));
-                                    } else {
-                                        // navigate to expenses page with param for direct open
                                         navigate('/home/expenses?openAdd=1');
-                                    }
+                                    } else navigate('/home/expenses?openAdd=1');
                                 }}
                                 title="Add"
                                 className={"fixed bottom-24 right-5 z-50 p-4 bg-gray-800 hover:bg-border border-white text-white rounded-full shadow-xl transition active:scale-95"}

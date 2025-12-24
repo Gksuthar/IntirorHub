@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
-import { feedApi } from "../services/api";
+import { feedApi, expenseApi } from "../services/api";
 
 interface FeedItem {
   id: string;
@@ -23,8 +23,28 @@ const Home: React.FC = () => {
   const { activeSite } = useSite();
   const { token } = useAuth();
   const [recentFeeds, setRecentFeeds] = useState<FeedItem[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const progress = 62;
   const daysLeft = 68;
+
+  // Budget calculations
+  const totalBudget = activeSite?.contractValue ?? 0;
+  // Usage breakdown:
+  // - usedApproved: sum of expenses that are approved (committed), regardless of payment status
+  // - usedPaid: sum of expenses that are approved and already paid
+  const usedApproved = expenses
+    .filter((e) => e.status === 'approved')
+    .reduce((s, it) => s + (it.amount || 0), 0);
+  const usedPaid = expenses
+    .filter((e) => e.status === 'approved' && e.paymentStatus === 'paid')
+    .reduce((s, it) => s + (it.amount || 0), 0);
+
+  // By default display committed (approved) usage — change to `usedPaid` if you prefer only paid amounts
+  const usedAmount = usedApproved;
+  const remainingAmount = Math.max(0, totalBudget - usedAmount);
+  const dueAmount = expenses
+    .filter((e) => e.paymentStatus === 'due')
+    .reduce((s, it) => s + (it.amount || 0), 0);
 
   useEffect(() => {
     const loadRecentFeeds = async () => {
@@ -52,6 +72,24 @@ const Home: React.FC = () => {
     };
 
     loadRecentFeeds();
+  }, [activeSite, token]);
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      if (!token || !activeSite?.id) {
+        setExpenses([]);
+        return;
+      }
+      try {
+        const res = await expenseApi.getExpensesBySite(activeSite.id, token);
+        setExpenses(res.expenses || []);
+      } catch (err) {
+        console.error('Failed to load expenses for dashboard', err);
+        setExpenses([]);
+      }
+    };
+
+    fetchExpenses();
   }, [activeSite, token]);
 
   const getIconForFeed = (item: FeedItem) => {
@@ -162,8 +200,8 @@ const Home: React.FC = () => {
             {/* Budget */}
             <div className="text-center">
               <p className="text-xs text-slate-400 mb-2">Budget</p>
-              <p className="text-xl sm:text-2xl font-bold text-slate-900">₹15.8L</p>
-              <p className="text-xs text-slate-400 mt-1">of ₹25L</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-900">₹{(usedAmount / 100000).toFixed(2)}L</p>
+              <p className="text-xs text-slate-400 mt-1">of ₹{(totalBudget / 100000).toFixed(2)}L</p>
             </div>
 
             {/* Approvals */}

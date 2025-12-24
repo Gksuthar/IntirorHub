@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
-import { /* useLocation, useNavigate, */ } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { paymentApi } from "../services/api";
 import type { PaymentDto } from "../services/api";
 
@@ -56,9 +56,28 @@ const Payments: React.FC = () => {
 
   
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const closeAddModal = () => {
     setShowAddForm(false);
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.get('openAdd')) {
+        navigate(location.pathname, { replace: true });
+      }
+    } catch (e) {}
   };
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.get('openAdd')) setShowAddForm(true);
+    } catch (e) {}
+    const handler = () => setShowAddForm(true);
+    window.addEventListener('open-add-payment', handler as EventListener);
+    return () => window.removeEventListener('open-add-payment', handler as EventListener);
+  }, [location.search]);
 
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,7 +232,7 @@ const Payments: React.FC = () => {
   const overdueCount = payments.filter((p) => p.status === "overdue").length;
 
   return (
-<div className="min-h-screen pt-20 pb-32 p-2 md:px-6">
+<div className="min-h-screen pt-20 p-2 md:px-6">
       <div className="max-w-md mx-auto">
 
         {payments.length > 0 && (

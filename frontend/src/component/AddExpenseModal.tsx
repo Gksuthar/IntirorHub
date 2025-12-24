@@ -62,35 +62,41 @@ const AddExpenseModal: React.FC<Props> = ({ isOpen, onClose, onCreated, token, s
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-xl w-full max-w-md p-6 shadow-lg overflow-auto max-h-[90vh]">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Add Expense</h3>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-gray-100"><X className="w-4 h-4" /></button>
+      <div className="relative bg-white rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-lg overflow-auto max-h-[90vh]">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col">
+              <h3 className="text-base font-semibold">Add Expense</h3>
+              <span className="text-xs text-gray-500">Quick transaction style entry</span>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-md hover:bg-gray-100"><X className="w-5 h-5" /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
             <label className="block text-xs text-gray-600">Title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full mt-1 p-2 border rounded" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full mt-1 p-2 border rounded" placeholder="e.g., Cement purchase" />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block text-xs text-gray-600">Description</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full mt-1 p-2 border rounded" rows={3} placeholder="Optional details" />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600">Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full mt-1 p-2 border rounded" />
+            <label className="block text-xs text-gray-600">Category</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full mt-1 p-2 border rounded">
+              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
 
-          <div className="flex gap-2 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <label className="block text-xs text-gray-600">Category</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full mt-1 p-2 border rounded">
-                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div className="w-full sm:w-36">
-              <label className="block text-xs text-gray-600">Amount</label>
-              <input value={amount} onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))} type="number" className="w-full mt-1 p-2 border rounded" />
+          <div>
+            <label className="block text-xs text-gray-600">Amount</label>
+            <div className="mt-1 flex items-center">
+              <input value={amount} onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))} type="number" className="w-full p-2 border rounded text-right text-lg font-semibold" placeholder="0.00" />
             </div>
           </div>
 
@@ -101,12 +107,16 @@ const AddExpenseModal: React.FC<Props> = ({ isOpen, onClose, onCreated, token, s
 
           <div>
             <label className="block text-xs text-gray-600">Invoice (optional)</label>
-            <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full mt-1" />
+            <div className="mt-1 flex items-center gap-2">
+              <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="hidden" id="expense-invoice" />
+              <label htmlFor="expense-invoice" className="inline-block px-3 py-2 rounded border text-sm cursor-pointer">Choose file</label>
+              <span className="text-xs text-gray-500 truncate">{file ? file.name : 'No file selected'}</span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 mt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded bg-gray-100">Cancel</button>
-            <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-indigo-600 text-white">{loading ? 'Saving...' : 'Create'}</button>
+          <div className="sm:col-span-2 flex flex-col sm:flex-row items-center sm:justify-end gap-2 mt-2">
+            <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 rounded bg-gray-100">Cancel</button>
+            <button type="submit" disabled={loading} className="w-full sm:w-auto px-4 py-2 rounded bg-indigo-600 text-white">{loading ? 'Saving...' : 'Create'}</button>
           </div>
         </form>
       </div>
