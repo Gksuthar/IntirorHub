@@ -639,7 +639,7 @@ const Feed: React.FC = () => {
                 {activeSite?.image ? (
                   <img
                     src={activeSite.image}
-                    alt={activeSite.name}
+                    alt={activeSite?.name || ''}
                     className="mt-4 h-36 w-full rounded-xl object-cover"
                   />
                 ) : (

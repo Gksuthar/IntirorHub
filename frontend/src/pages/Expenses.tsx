@@ -90,7 +90,7 @@ const Expenses: React.FC = () => {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">SITE ZERO</h1>
-            <p className="text-sm text-gray-600">{activeSite.name}</p>
+            <p className="text-sm text-gray-600">{activeSite?.name || ''}</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
             RK
