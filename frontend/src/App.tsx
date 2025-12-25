@@ -16,6 +16,8 @@ import Landing from "./pages/Landing";
 import UserListing from "./pages/UserListing";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AdminSignup from "./pages/AdminSignup";
+import Adminpanel from "./pages/Adminpanel";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SiteProvider } from "./context/SiteContext";
 
@@ -117,6 +119,14 @@ function App() {
                 </PublicRoute>
               } 
             />
+            <Route 
+              path="/admin-signup" 
+              element={
+                <PublicRoute>
+                  <AdminSignup />
+                </PublicRoute>
+              }
+            />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             {/* catch any variants like unexpected trailing segments */}
@@ -147,6 +157,14 @@ function App() {
                 }
               />
             </Route>
+            <Route
+              path="/adminpanel"
+              element={
+                <AdminRoute>
+                  <Adminpanel />
+                </AdminRoute>
+              }
+            />
             {/* catch-all: render reset-password when pathname begins with it, otherwise redirect home */}
             <Route path="*" element={<ResetPasswordCatch />} />
           </Routes>

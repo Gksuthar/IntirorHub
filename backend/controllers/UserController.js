@@ -2,6 +2,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
+import siteModel from "../models/siteModel.js";
 import { sendPasswordEmail, sendOtpEmail, sendEmail } from "../utils/emailService.js";
 import { generateTemporaryPassword } from "../utils/password.js";
 import crypto from "crypto";
@@ -107,6 +108,16 @@ export const loginUser = async (req, res) => {
 
     if (!user.isVerified) {
       return res.status(403).json({ message: "Account not verified. Please enter the verification code sent to your email." });
+    }
+
+    // Check company payment status: if any admin for the company has paymentDue=true, block login
+    try {
+      const adminRecord = await userModel.findOne({ companyName: user.companyName, role: 'ADMIN' }).select('+paymentDue');
+      if (adminRecord && adminRecord.paymentDue) {
+        return res.status(403).json({ message: 'Your payment is due. Please contact the administrator.' });
+      }
+    } catch (e) {
+      console.error('payment check error', e);
     }
 
     const token = buildToken(user._id);
@@ -445,6 +456,90 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// --- Admin helpers
+export const listAllCompanyAdmins = async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+    const admins = await userModel.find({ role: 'ADMIN' }).select('name email phone companyName createdAt paymentDue');
+
+    const payload = admins.map((a) => ({
+      id: a._id,
+      companyName: a.companyName,
+      email: a.email,
+      phone: a.phone,
+      createdAt: a.createdAt,
+      paymentDue: Boolean(a.paymentDue),
+    }));
+
+    return res.status(200).json({ companies: payload });
+  } catch (error) {
+    console.error('listAllCompanyAdmins error', error);
+    return res.status(500).json({ message: 'Unable to fetch company admins' });
+  }
+};
+
+export const getCompanyUsersByName = async (req, res) => {
+  try {
+    const { companyName } = req.params;
+    if (!companyName) return res.status(400).json({ message: 'companyName is required' });
+
+    const members = await userModel.find({ companyName }).select('name email role companyName createdAt siteAccess');
+
+    const payload = members.map((member) => ({
+      id: member._id,
+      name: member.name || member.email,
+      email: member.email,
+      role: member.role,
+      joinedAt: member.createdAt,
+      siteAccessCount: member.siteAccess ? member.siteAccess.length ?? 0 : 0,
+    }));
+
+    return res.status(200).json({ users: payload });
+  } catch (error) {
+    console.error('getCompanyUsersByName error', error);
+    return res.status(500).json({ message: 'Unable to fetch company users' });
+  }
+};
+
+export const getCompanySites = async (req, res) => {
+  try {
+    const { companyName } = req.params;
+    if (!companyName) return res.status(400).json({ message: 'companyName is required' });
+
+    const sites = await siteModel.find({ companyName }).select('name description contractValue createdAt');
+
+    const payload = sites.map((s) => ({
+      id: s._id,
+      name: s.name,
+      description: s.description,
+      contractValue: s.contractValue,
+      createdAt: s.createdAt,
+    }));
+
+    return res.status(200).json({ sites: payload });
+  } catch (error) {
+    console.error('getCompanySites error', error);
+    return res.status(500).json({ message: 'Unable to fetch company sites' });
+  }
+};
+
+export const toggleCompanyPayment = async (req, res) => {
+  try {
+    const { companyName } = req.params;
+    const { enabled } = req.body;
+    if (typeof enabled !== 'boolean') return res.status(400).json({ message: 'enabled must be boolean' });
+    if (!companyName) return res.status(400).json({ message: 'companyName is required' });
+
+    await userModel.updateMany({ role: 'ADMIN', companyName }, { $set: { paymentDue: enabled } });
+
+    return res.status(200).json({ message: 'Payment flag updated', companyName, paymentDue: enabled });
+  } catch (error) {
+    console.error('toggleCompanyPayment error', error);
+    return res.status(500).json({ message: 'Unable to update payment flag' });
+  }
+};
+
 export default {
   registerAdmin,
   loginUser,
@@ -456,4 +551,8 @@ export default {
   resendOtp,
   forgotPassword,
   resetPassword,
+  listAllCompanyAdmins,
+  getCompanyUsersByName,
+  getCompanySites,
+  toggleCompanyPayment,
 };

@@ -55,6 +55,10 @@ const UserSchema = new mongoose.Schema(
       default: null,
       select: false,
     },
+    paymentDue: {
+      type: Boolean,
+      default: false,
+    },
     resetPasswordToken: {
       type: String,
       default: null,

@@ -426,6 +426,29 @@ export const paymentApi = {
   },
 };
 
+export const adminApi = {
+  listCompanyAdmins: (token: string) =>
+    request<{
+      companies: Array<{
+        id: string;
+        companyName: string;
+        email: string;
+        phone?: string;
+        createdAt?: string;
+        paymentDue?: boolean;
+      }>;
+    }>(`/admin/companies`, { method: "GET", token }),
+
+  getCompanyUsers: (companyName: string, token: string) =>
+    request<{ users: CompanyUserDto[] }>(`/admin/company/${encodeURIComponent(companyName)}/users`, { method: 'GET', token }),
+
+  getCompanySites: (companyName: string, token: string) =>
+    request<{ sites: SiteDto[] }>(`/admin/company/${encodeURIComponent(companyName)}/sites`, { method: 'GET', token }),
+
+  togglePaymentDue: (companyName: string, enabled: boolean, token: string) =>
+    request<{ message: string; companyName: string; paymentDue: boolean }>(`/admin/company/${encodeURIComponent(companyName)}/payment-due`, { method: 'PUT', body: { enabled }, token }),
+};
+
 export const expenseApi = {
   addExpense: (
     body: {
