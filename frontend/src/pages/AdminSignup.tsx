@@ -23,8 +23,8 @@ const AdminSignup: React.FC = () => {
     setError(null);
     setSuccess(null);
     try {
-      const res = await authApi.registerAdmin(form);
-      setSuccess('Admin registered! Please check your email for verification.');
+    await authApi.registerAdmin(form);
+    setSuccess('Admin registered! Please check your email for verification.');
     } catch (err: any) {
       setError(err?.message || 'Registration failed');
     } finally {
