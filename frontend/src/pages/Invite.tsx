@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { authApi, ApiError, type UserRole, userApi } from "../services/api";
 import {
   Mail,
@@ -64,6 +64,19 @@ const Invite: React.FC = () => {
       return;
     }
   }, [authLoading, navigate, token, user]);
+
+  // Open add form when navigated with ?openAdd=1 — watch location.search so it works without remount
+  const location = useLocation();
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search || window.location.search);
+      if (params.get("openAdd")) setShowAddForm(true);
+    } catch (e) {}
+
+    const handler = () => setShowAddForm(true);
+    window.addEventListener('open-add-invite', handler as EventListener);
+    return () => window.removeEventListener('open-add-invite', handler as EventListener);
+  }, [location.search]);
 
   useEffect(() => {
     const loadUsers = async () => {

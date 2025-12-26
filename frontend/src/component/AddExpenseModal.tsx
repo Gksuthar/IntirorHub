@@ -62,9 +62,9 @@ const AddExpenseModal: React.FC<Props> = ({ isOpen, onClose, onCreated, token, s
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-lg overflow-auto max-h-[90vh]">
+      <div className="relative bg-white rounded-xl w-full max-w-md p-4 sm:p-6 shadow-lg overflow-auto max-h-[calc(100vh-8rem)]" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="flex flex-col">

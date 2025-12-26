@@ -1,6 +1,6 @@
 type FilterKey = "all" | "updates" | "photos" | "documents" | "milestones";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   MessageSquare,
   Image,
@@ -66,6 +66,7 @@ const Feed: React.FC = () => {
   const { user, token } = useAuth();
   const { activeSite, sites, openCreateSite } = useSite();
   const navigate = useNavigate();
+  const location = useLocation();
   const [newTitle, setNewTitle] = useState("");
   const [newPost, setNewPost] = useState("");
   const [selectedImages, setSelectedImages] = useState<
@@ -362,7 +363,16 @@ const Feed: React.FC = () => {
     };
 
     loadFeed();
-  }, [activeSiteId, token]);
+      // open add form when query param present
+      try {
+        const params = new URLSearchParams(location.search || window.location.search);
+        if (params.get("openAdd")) setShowAddForm(true);
+      } catch (e) {}
+
+      const handler = () => setShowAddForm(true);
+      window.addEventListener('open-add-feed', handler as EventListener);
+      return () => window.removeEventListener('open-add-feed', handler as EventListener);
+  }, [activeSiteId, token, location.search]);
 
   const getTypeIcon = (type: FeedItem["type"]) => {
     switch (type) {
@@ -699,27 +709,14 @@ const Feed: React.FC = () => {
           </div>
 
           {/* Floating Add Feed button */}
-          <div className="fixed right-5 bottom-25 z-50">
-             <button
-    onClick={() => setShowAddForm(true)}
-    title="Add Payment"
-    className="
-      fixed
-      bottom-24   /* 👈 bottom navbar ke upar */
-      right-5
-      z-50
-      p-4
-bg-gray-800
-      hover:bg-border border-white
-      text-white
-      rounded-full
-      shadow-xl
-      transition
-      active:scale-95
-    "
-  >
-    <Plus className="h-6 w-6" />
-  </button>
+          <div className="fixed right-5 bottom-24 z-50">
+            <button
+              onClick={() => setShowAddForm(true)}
+              title="Add Feed"
+              className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition active:scale-95"
+            >
+              <Plus className="h-6 w-6" />
+            </button>
           </div>
 
           {/* Add Feed Modal */}

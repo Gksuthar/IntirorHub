@@ -82,15 +82,23 @@ const MainLayout = () => {
             </div>
                         {user && !isHomePage && !isClient && (
                             <button
-                                onClick={() => {
-                                    const p = location.pathname;
-                                    if (p.startsWith('/home/payments')) {
-                                        if (isAdmin) navigate('/home/payments?openAdd=1');
-                                        else showToast('Only admins can add payments');
-                                    } else if (p.startsWith('/home/expenses')) {
-                                        navigate('/home/expenses?openAdd=1');
-                                    } else navigate('/home/expenses?openAdd=1');
-                                }}
+                                                onClick={() => {
+                                                    const p = location.pathname;
+                                                    if (p.startsWith('/home/payments')) {
+                                                        if (isAdmin) navigate('/home/payments?openAdd=1');
+                                                        else showToast('Only admins can add payments');
+                                                    } else if (p.startsWith('/home/expenses')) {
+                                                        navigate('/home/expenses?openAdd=1');
+                                                        // ensure modal opens even if URL doesn't change
+                                                        setTimeout(() => window.dispatchEvent(new Event('open-add-expense')), 150);
+                                                    } else if (p.startsWith('/home/feed')) {
+                                                        navigate('/home/feed?openAdd=1');
+                                                        setTimeout(() => window.dispatchEvent(new Event('open-add-feed')), 150);
+                                                    } else if (p.startsWith('/home/invite')) {
+                                                        navigate('/home/invite?openAdd=1');
+                                                        setTimeout(() => window.dispatchEvent(new Event('open-add-invite')), 150);
+                                                    } else navigate('/home/expenses?openAdd=1');
+                                                }}
                                 title="Add"
                                 className={"fixed bottom-24 right-5 z-50 p-4 bg-gray-800 hover:bg-border border-white text-white rounded-full shadow-xl transition active:scale-95"}
                             >
