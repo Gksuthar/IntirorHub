@@ -90,8 +90,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     hydrate();
+    // Poll company status periodically so already-logged-in users get updated payment status
+    const interval = setInterval(async () => {
+      try {
+        const profile = await authApi.me(token);
+        if (profile && profile.user) {
+          setUser(profile.user);
+          persistUser(profile.user);
+        }
+      } catch (e) {
+        // ignore polling errors
+      }
+    }, 15000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
     // We intentionally omit user from dependencies to avoid refetch loops.
     // eslint-disable-next-line react-hooks/exhaustive-deps

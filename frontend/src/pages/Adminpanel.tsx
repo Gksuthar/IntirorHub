@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { Building2, Users, MapPin, Calendar, Phone, Mail, AlertCircle, X, Search, RefreshCw } from 'lucide-react';
 import { adminApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-// Local DTO types to avoid runtime type imports
+// Local DTO types
 export interface CompanyUserDto {
   id: string;
   name: string;
@@ -19,7 +21,6 @@ export interface SiteDto {
   createdAt: string;
   contractValue?: number;
 }
-import { useAuth } from '../context/AuthContext';
 
 interface CompanyRow {
   id: string;
@@ -33,11 +34,13 @@ interface CompanyRow {
 const Adminpanel: React.FC = () => {
   const { token } = useAuth();
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<CompanyRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<CompanyUserDto[] | null>(null);
   const [selectedSites, setSelectedSites] = useState<SiteDto[] | null>(null);
   const [modalTitle, setModalTitle] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchCompanies = async () => {
     if (!token) return;
@@ -45,14 +48,16 @@ const Adminpanel: React.FC = () => {
     setError(null);
     try {
       const data = await adminApi.listCompanyAdmins(token);
-      setCompanies((data.companies || []).map((c: any) => ({
+      const companyData = (data.companies || []).map((c: any) => ({
         id: c.id,
         companyName: c.companyName,
         email: c.email,
         phone: c.phone,
         createdAt: c.createdAt,
         paymentDue: Boolean(c.paymentDue),
-      })));
+      }));
+      setCompanies(companyData);
+      setFilteredCompanies(companyData);
     } catch (err) {
       setError('Failed to load companies. Please check your connection and try again.');
     } finally {
@@ -62,8 +67,15 @@ const Adminpanel: React.FC = () => {
 
   useEffect(() => {
     fetchCompanies();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    const filtered = companies.filter(c => 
+      c.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredCompanies(filtered);
+  }, [searchTerm, companies]);
 
   const viewUsers = async (companyName: string) => {
     if (!token) return;
@@ -100,58 +112,194 @@ const Adminpanel: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">Admin Panel — Companies</h2>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      {!loading && !error && companies.length === 0 && (
-        <div className="text-gray-500 mt-8 text-center">No companies found. If you see this, check your backend API and database.</div>
-      )}
-      <div className="bg-white shadow rounded border p-4">
-        {loading ? (
-          <div>Loading...</div>
-        ) : (
-          <>
-            {/* Desktop / tablet: horizontal table with overflow */}
-            {companies.length > 0 && (
-              <div className="hidden sm:block">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm min-w-[700px]">
-                    <thead>
-                      <tr className="text-left text-xs text-gray-500">
-                        <th className="py-2">Company</th>
-                        <th className="py-2">Admin Email</th>
-                        <th className="py-2">Phone</th>
-                        <th className="py-2">Created</th>
-                        <th className="py-2">Payment Due</th>
-                        <th className="py-2">Actions</th>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2 rounded-lg shadow-md">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800">Admin Panel</h1>
+                <p className="text-sm text-slate-500">Manage companies and access</p>
+              </div>
+            </div>
+            <button 
+              onClick={fetchCompanies}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by company name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-sm"
+            />
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-red-800">Error</h3>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+            <button onClick={() => setError(null)} className="ml-auto text-red-600 hover:text-red-800">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Building2 className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Total Companies</p>
+                <p className="text-2xl font-bold text-slate-800">{companies.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="bg-green-100 p-2 rounded-lg">
+                <Users className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Active</p>
+                <p className="text-2xl font-bold text-slate-800">{companies.filter(c => !c.paymentDue).length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="bg-red-100 p-2 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Payment Due</p>
+                <p className="text-2xl font-bold text-slate-800">{companies.filter(c => c.paymentDue).length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Companies List */}
+        {!loading && !error && filteredCompanies.length === 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center">
+            <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500">No companies found matching your search.</p>
+          </div>
+        )}
+
+        <div className="bg-white shadow-sm rounded-lg border border-slate-200">
+          {loading ? (
+            <div className="p-12 text-center">
+              <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
+              <p className="text-slate-500">Loading companies...</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              {filteredCompanies.length > 0 && (
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Company</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Contact</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Created</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Payment</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {companies.map((c) => (
-                        <tr key={c.id} className="border-t">
-                          <td className="py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium">{c.companyName}</div>
-                              {c.paymentDue && (
-                                <span className="inline-flex items-center px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded">
-                                  Payment Due
-                                </span>
-                              )}
+                    <tbody className="divide-y divide-slate-200">
+                      {filteredCompanies.map((c) => (
+                        <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-10 h-10 rounded-lg flex items-center justify-center text-white font-semibold shadow-sm">
+                                {c.companyName.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-slate-800">{c.companyName}</div>
+                                {c.paymentDue && (
+                                  <span className="inline-flex items-center px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded-full mt-1">
+                                    Payment Due
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </td>
-                          <td className="py-3 break-words">{c.email}</td>
-                          <td className="py-3">{c.phone || '—'}</td>
-                          <td className="py-3">{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</td>
-                          <td className="py-3">
-                            <label className="inline-flex items-center space-x-2">
-                              <input type="checkbox" className="rounded" checked={!!c.paymentDue} onChange={(e) => togglePayment(c.companyName, e.target.checked)} />
-                              <span className="text-xs">{c.paymentDue ? 'Enabled' : 'Disabled'}</span>
+                          <td className="px-6 py-4">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-sm text-slate-600">
+                                <Mail className="w-4 h-4 text-slate-400" />
+                                {c.email}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-slate-600">
+                                <Phone className="w-4 h-4 text-slate-400" />
+                                {c.phone || '—'}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                              <Calendar className="w-4 h-4 text-slate-400" />
+                              {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <label className="inline-flex items-center gap-2 cursor-pointer">
+                              <div className="relative">
+                                <input 
+                                  type="checkbox" 
+                                  className="sr-only peer" 
+                                  checked={!!c.paymentDue} 
+                                  onChange={(e) => togglePayment(c.companyName, e.target.checked)} 
+                                />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                              </div>
+                              <span className="text-sm text-slate-600">{c.paymentDue ? 'Due' : 'Clear'}</span>
                             </label>
                           </td>
-                          <td className="py-3">
+                          <td className="px-6 py-4">
                             <div className="flex gap-2">
-                              <button onClick={() => viewUsers(c.companyName)} className="px-3 py-1 bg-blue-600 text-white rounded text-xs">View Users</button>
-                              <button onClick={() => viewSites(c.companyName)} className="px-3 py-1 bg-gray-700 text-white rounded text-xs">View Sites</button>
+                              <button 
+                                onClick={() => viewUsers(c.companyName)} 
+                                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                              >
+                                <Users className="w-4 h-4" />
+                                Users
+                              </button>
+                              <button 
+                                onClick={() => viewSites(c.companyName)} 
+                                className="flex items-center gap-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                              >
+                                <MapPin className="w-4 h-4" />
+                                Sites
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -159,82 +307,148 @@ const Adminpanel: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Mobile: stacked cards */}
-            <div className="space-y-3 sm:hidden">
-              {companies.map((c) => (
-                <div key={c.id} className="border rounded p-3 bg-gray-50 shadow-sm">
-                  <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm font-semibold">{c.companyName}</div>
-                          {c.paymentDue && (
-                            <span className="inline-flex items-center px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded">
-                              Payment Due
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-600 break-words">{c.email}</div>
+              {/* Mobile Cards */}
+              <div className="lg:hidden p-4 space-y-4">
+                {filteredCompanies.map((c) => (
+                  <div key={c.id} className="p-4 hover:bg-slate-50 transition-colors border border-slate-200 rounded-lg shadow-sm">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold text-lg shadow-sm flex-shrink-0">
+                        {c.companyName.charAt(0)}
                       </div>
-                      <div className="text-right text-xs text-gray-500">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-slate-800 mb-1">{c.companyName}</div>
+                        {c.paymentDue && (
+                          <span className="inline-flex items-center px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                            Payment Due
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <div className="text-xs text-gray-700">Phone: <span className="text-sm text-gray-900">{c.phone || '—'}</span></div>
-                    <div className="flex items-center gap-2">
-                      <label className="inline-flex items-center space-x-2">
-                        <input type="checkbox" className="rounded" checked={!!c.paymentDue} onChange={(e) => togglePayment(c.companyName, e.target.checked)} />
-                        <span className="text-xs">{c.paymentDue ? 'Enabled' : 'Disabled'}</span>
+                    
+                    <div className="space-y-2 mb-3 text-sm">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <span className="break-all">{c.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Phone className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <span>{c.phone || '—'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <span>{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200">
+                      <span className="text-sm text-slate-600">Payment Status</span>
+                      <label className="inline-flex items-center gap-2 cursor-pointer">
+                        <div className="relative">
+                          <input 
+                            type="checkbox" 
+                            className="sr-only peer" 
+                            checked={!!c.paymentDue} 
+                            onChange={(e) => togglePayment(c.companyName, e.target.checked)} 
+                          />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                        </div>
+                        <span className="text-sm text-slate-600">{c.paymentDue ? 'Due' : 'Clear'}</span>
                       </label>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => viewUsers(c.companyName)} 
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                      >
+                        <Users className="w-4 h-4" />
+                        View Users
+                      </button>
+                      <button 
+                        onClick={() => viewSites(c.companyName)} 
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                      >
+                        <MapPin className="w-4 h-4" />
+                        View Sites
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-3 flex gap-2">
-                    <button onClick={() => viewUsers(c.companyName)} className="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-sm">View Users</button>
-                    <button onClick={() => viewSites(c.companyName)} className="flex-1 px-3 py-2 bg-gray-700 text-white rounded text-sm">View Sites</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Modal / Drawer */}
+      {/* Modal */}
       {(selectedUsers || selectedSites) && (
-        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50">
-          <div className="bg-white rounded-t-lg sm:rounded w-full sm:w-11/12 md:w-2/3 lg:w-1/2 max-h-[85vh] sm:max-h-[80vh] overflow-auto p-4 mx-2">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold">{modalTitle}</h3>
-              <button onClick={() => { setSelectedUsers(null); setSelectedSites(null); }} className="text-gray-600">Close</button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl">
+            <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
+              <h3 className="text-xl font-semibold text-slate-800">{modalTitle}</h3>
+              <button 
+                onClick={() => { setSelectedUsers(null); setSelectedSites(null); }} 
+                className="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-200 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div>
+            <div className="p-6 overflow-y-auto max-h-[calc(85vh-88px)]">
               {selectedUsers && (
-                <ul className="space-y-2">
+                <div className="space-y-3">
                   {selectedUsers.map((u) => (
-                    <li key={u.id} className="border rounded p-2 flex justify-between items-center">
-                      <div>
-                        <div className="font-medium">{u.name}</div>
-                        <div className="text-xs text-gray-500">{u.email} • {u.role}</div>
+                    <div key={u.id} className="border border-slate-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all">
+                      <div className="relative flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-gradient-to-br from-green-500 to-green-600 w-10 h-10 rounded-lg flex items-center justify-center text-white font-semibold shadow-sm">
+                            {u.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-800">{u.name}</div>
+                            <div className="text-sm text-slate-600 flex items-center gap-2 mt-1">
+                              <Mail className="w-3 h-3" />
+                              {u.email}
+                            </div>
+                            <span className="inline-block mt-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                              {u.role}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-xs text-slate-500 flex items-center gap-1 absolute top-12 ">
+                          <Calendar className="w-3 h-3" />
+                          {u.joinedAt ? new Date(u.joinedAt).toLocaleDateString() : '—'}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-400">Joined: {u.joinedAt ? new Date(u.joinedAt).toLocaleDateString() : '—'}</div>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
 
               {selectedSites && (
-                <ul className="space-y-2">
+                <div className="space-y-3">
                   {selectedSites.map((s) => (
-                    <li key={s.id} className="border rounded p-2">
-                      <div className="font-medium">{s.name}</div>
-                      <div className="text-xs text-gray-500">{s.description}</div>
-                      <div className="text-xs text-gray-400">Contract value: {s.contractValue ?? '—'}</div>
-                    </li>
+                    <div key={s.id} className="border border-slate-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all">
+                      <div className="flex items-start gap-3">
+                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm">
+                          <MapPin className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-slate-800">{s.name}</div>
+                          <div className="text-sm text-slate-600 mt-1">{s.description}</div>
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200">
+                            <span className="text-xs text-slate-500">Contract Value</span>
+                            <span className="font-semibold text-slate-800">
+                              {s.contractValue ? `$${s.contractValue.toLocaleString()}` : '—'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
-
             </div>
           </div>
         </div>

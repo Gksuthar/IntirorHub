@@ -344,14 +344,14 @@ const Expenses: React.FC = () => {
             </div>
           )}
 
-          {/* Add Expense Button */}
+          {/* Add Expense Button
           <button
             onClick={() => setIsModalOpen(true)}
             className="w-full bg-gray-800 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors shadow-sm"
           >
             <Plus className="h-5 w-5" />
             Add Expense
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -536,7 +536,7 @@ const Expenses: React.FC = () => {
                 {/* Footer */}
                 <div className="flex justify-between items-center text-sm text-gray-500 pt-3 border-t border-gray-100">
                   <span>{expense.createdBy?.name || '—'}</span>
-                  <span>{new Date(expense.dueDate).toLocaleDateString('en-IN')}</span>
+                  {/* <span>{new Date(expense.dueDate).toLocaleDateString('en-IN')}</span> */}
                 </div>
               </div>
             ))

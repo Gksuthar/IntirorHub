@@ -25,6 +25,7 @@ const MainLayout = () => {
     const isHomePage = location.pathname === '/' || location.pathname === '/home';
     const isAdmin = (user?.role ?? '').toString().toUpperCase() === 'ADMIN';
     const isClient = (user?.role ?? '').toString().toUpperCase() === 'CLIENT';
+    const paymentDueActive = Boolean(user && !(isAdmin) && (user as any).companyPaymentDue);
 
     const showToast = (message: string) => {
         try {
@@ -61,7 +62,23 @@ const MainLayout = () => {
         <>
             <Header />
             <div className="pb-32">
-                <Outlet />
+                <div className={paymentDueActive ? 'pointer-events-none select-none filter blur-sm' : ''}>
+                    <Outlet />
+                </div>
+                {/* Global payment-due modal for logged-in users */}
+                {paymentDueActive && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                        <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4 text-center">
+                            <h3 className="text-lg font-semibold text-slate-800 mb-2">Payment Required</h3>
+                            <p className="text-sm text-slate-600 mb-4">Your payment is due. Please contact the administrator.</p>
+                            <div className="flex gap-2 justify-center">
+                                <button onClick={() => { try { navigator?.clipboard?.writeText('contact@company.com'); } catch(e){} }} className="px-4 py-2 bg-blue-600 text-white rounded">Contact Admin</button>
+                                <button onClick={() => { try { const nav = window.location; window.location.href = nav.origin; } catch(e){} }} className="px-4 py-2 bg-gray-100 rounded">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
                         {user && !isHomePage && !isClient && (
                             <button

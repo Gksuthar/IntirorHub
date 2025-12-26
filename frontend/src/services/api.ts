@@ -42,6 +42,7 @@ export interface AuthUser {
   isVerified: boolean;
   createdAt?: string;
   updatedAt?: string;
+  companyPaymentDue?: boolean;
 }
 
 export interface SiteDto {

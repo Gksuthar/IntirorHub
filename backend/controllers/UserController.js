@@ -135,7 +135,18 @@ export const loginUser = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   try {
-    res.status(200).json({ user: sanitizeUser(req.user) });
+    const userObj = sanitizeUser(req.user);
+
+    // Attach company payment status (check admin record for the company)
+    try {
+      const adminRecord = await userModel.findOne({ companyName: req.user.companyName, role: 'ADMIN' }).select('+paymentDue');
+      userObj.companyPaymentDue = Boolean(adminRecord && adminRecord.paymentDue);
+    } catch (e) {
+      console.error('error fetching company payment status', e);
+      userObj.companyPaymentDue = false;
+    }
+
+    res.status(200).json({ user: userObj });
   } catch (error) {
     console.error("getProfile error", error);
     res.status(500).json({ message: "Unable to fetch profile" });
