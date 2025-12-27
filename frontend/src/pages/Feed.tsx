@@ -77,7 +77,7 @@ const Feed: React.FC = () => {
   >([]);
   const [feedItems, setFeedItems] = useState<FeedItem[]>(initialFeedItems);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
-  const [loading, setLoading] = useState(false);
+  // loading state removed
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [siteError, setSiteError] = useState<string | null>(null);

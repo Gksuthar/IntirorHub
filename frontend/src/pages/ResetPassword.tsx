@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Lock, Loader2 } from "lucide-react";
+import { Lock } from "lucide-react";
 import { authApi, ApiError } from "../services/api";
 
 const ResetPassword: React.FC = () => {

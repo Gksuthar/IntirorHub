@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 const adminPhone = import.meta.env.VITE_ADMIN_PHONE || "8320354644";
 import Header from "../component/Header/Header";
 import { Outlet } from "react-router-dom";

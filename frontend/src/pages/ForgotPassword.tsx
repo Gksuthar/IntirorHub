@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Loader2 } from "lucide-react";
+import { Mail } from "lucide-react";
 import { authApi, ApiError } from "../services/api";
 
 const ForgotPassword: React.FC = () => {

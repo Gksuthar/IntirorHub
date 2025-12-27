@@ -24,7 +24,7 @@ import { SiteProvider } from "./context/SiteContext";
 // LoadingScreen removed
 
 const PublicRoute = ({ children }: { children: ReactElement }) => {
-  const { token, loading } = useAuth();
+  const { token } = useAuth();
 
   // Removed loading screen
 
@@ -36,7 +36,7 @@ const PublicRoute = ({ children }: { children: ReactElement }) => {
 };
 
 const RootRedirect = () => {
-  const { token, loading } = useAuth();
+  const { token } = useAuth();
 
   // Removed loading screen
 
@@ -48,7 +48,7 @@ const RootRedirect = () => {
 };
 
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
-  const { token, loading } = useAuth();
+  const { token } = useAuth();
 
   // Removed loading screen
 
@@ -60,7 +60,7 @@ const ProtectedRoute = ({ children }: { children: ReactElement }) => {
 };
 
 const AdminRoute = ({ children }: { children: ReactElement }) => {
-  const { token, loading, user } = useAuth();
+  const { token, user } = useAuth();
 
   // Removed loading screen
 
