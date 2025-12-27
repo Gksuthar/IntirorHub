@@ -335,7 +335,7 @@ const Feed: React.FC = () => {
         return;
       }
 
-      setLoading(true);
+      // setLoading removed
       setError(null);
       try {
         const response = await feedApi.listFeed(activeSiteId, token);
@@ -358,7 +358,7 @@ const Feed: React.FC = () => {
         setError("Unable to load feed");
         setFeedItems([]);
       } finally {
-        setLoading(false);
+        // setLoading removed
       }
     };
 
