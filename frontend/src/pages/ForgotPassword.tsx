@@ -5,7 +5,7 @@ import { authApi, ApiError } from "../services/api";
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
+  // loading state removed
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const ForgotPassword: React.FC = () => {
     setError(null);
     setMessage(null);
     try {
-      setLoading(true);
+      // loading removed
       await authApi.forgotPassword({ email: email.trim() });
       setMessage(
         "If an account exists with this email, a password reset link was sent."
@@ -26,7 +26,7 @@ const ForgotPassword: React.FC = () => {
       const msg = err instanceof ApiError ? err.message : "Unable to send reset email";
       setError(msg);
     } finally {
-      setLoading(false);
+      // loading removed
     }
   };
 
@@ -56,8 +56,8 @@ const ForgotPassword: React.FC = () => {
 
           <div className="flex items-center justify-between">
             <Link to="/login" className="text-sm text-gray-500">Back to login</Link>
-            <button type="submit" disabled={loading} className="rounded-xl bg-black px-4 py-2 text-white">
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</> : 'Send reset link'}
+            <button type="submit" className="rounded-xl bg-black px-4 py-2 text-white">
+              Send reset link
             </button>
           </div>
         </form>

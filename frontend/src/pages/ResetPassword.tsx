@@ -11,7 +11,7 @@ const ResetPassword: React.FC = () => {
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [loading, setLoading] = useState(false);
+  // loading state removed
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,14 +33,14 @@ const ResetPassword: React.FC = () => {
     }
 
     try {
-      setLoading(true);
+      // loading removed
       await authApi.resetPassword({ email, token, newPassword: password });
       navigate('/login', { state: { email } });
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Unable to reset password";
       setError(msg);
     } finally {
-      setLoading(false);
+      // loading removed
     }
   };
 
@@ -80,8 +80,8 @@ const ResetPassword: React.FC = () => {
 
           <div className="flex items-center justify-between">
             <button type="button" onClick={() => navigate('/login')} className="text-sm text-gray-500">Back to login</button>
-            <button type="submit" disabled={loading} className="rounded-xl bg-black px-4 py-2 text-white">
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : 'Save password'}
+            <button type="submit" className="rounded-xl bg-black px-4 py-2 text-white">
+              Save password
             </button>
           </div>
         </form>

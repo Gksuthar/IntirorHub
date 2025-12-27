@@ -35,7 +35,7 @@ const Adminpanel: React.FC = () => {
   const { token } = useAuth();
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<CompanyRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  // loading state removed
   const [error, setError] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<CompanyUserDto[] | null>(null);
   const [selectedSites, setSelectedSites] = useState<SiteDto[] | null>(null);
@@ -44,7 +44,7 @@ const Adminpanel: React.FC = () => {
 
   const fetchCompanies = async () => {
     if (!token) return;
-    setLoading(true);
+    // loading removed
     setError(null);
     try {
       const data = await adminApi.listCompanyAdmins(token);
@@ -61,7 +61,7 @@ const Adminpanel: React.FC = () => {
     } catch (err) {
       setError('Failed to load companies. Please check your connection and try again.');
     } finally {
-      setLoading(false);
+      // loading removed
     }
   };
 
@@ -128,10 +128,10 @@ const Adminpanel: React.FC = () => {
             </div>
             <button 
               onClick={fetchCompanies}
-              disabled={loading}
+              // disabled removed
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className="w-4 h-4" />
               <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
@@ -206,7 +206,7 @@ const Adminpanel: React.FC = () => {
         </div>
 
         {/* Companies List */}
-        {!loading && !error && filteredCompanies.length === 0 && (
+        {!error && filteredCompanies.length === 0 && (
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center">
             <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500">No companies found matching your search.</p>
@@ -214,12 +214,7 @@ const Adminpanel: React.FC = () => {
         )}
 
         <div className="bg-white shadow-sm rounded-lg border border-slate-200">
-          {loading ? (
-            <div className="p-12 text-center">
-              <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-              <p className="text-slate-500">Loading companies...</p>
-            </div>
-          ) : (
+          {(
             <>
               {/* Desktop Table */}
               {filteredCompanies.length > 0 && (

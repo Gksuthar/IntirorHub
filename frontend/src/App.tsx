@@ -21,18 +21,12 @@ import Adminpanel from "./pages/Adminpanel";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SiteProvider } from "./context/SiteContext";
 
-const LoadingScreen = () => (
-  <div className="flex min-h-screen items-center justify-center bg-white text-gray-500">
-    <span className="text-xs uppercase tracking-[0.4em]">Loading</span>
-  </div>
-);
+// LoadingScreen removed
 
 const PublicRoute = ({ children }: { children: ReactElement }) => {
   const { token, loading } = useAuth();
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  // Removed loading screen
 
   if (token) {
     return <Navigate to="/home" replace />;
@@ -44,9 +38,7 @@ const PublicRoute = ({ children }: { children: ReactElement }) => {
 const RootRedirect = () => {
   const { token, loading } = useAuth();
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  // Removed loading screen
 
   if (token) {
     return <Navigate to="/home" replace />;
@@ -58,9 +50,7 @@ const RootRedirect = () => {
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const { token, loading } = useAuth();
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  // Removed loading screen
 
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -72,9 +62,7 @@ const ProtectedRoute = ({ children }: { children: ReactElement }) => {
 const AdminRoute = ({ children }: { children: ReactElement }) => {
   const { token, loading, user } = useAuth();
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  // Removed loading screen
 
   if (!token) {
     return <Navigate to="/login" replace />;

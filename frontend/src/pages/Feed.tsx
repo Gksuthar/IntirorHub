@@ -436,17 +436,13 @@ const Feed: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                {loading && (
-                  <div className="rounded-2xl border border-gray-100 bg-white p-5 text-sm text-gray-500">
-                    Loading feed...
-                  </div>
-                )}
-                {error && !loading && (
+                {/* loading removed */}
+                {error && (
                   <div className="rounded-2xl border border-red-100 bg-red-50 p-5 text-sm text-red-700">
                     {error}
                   </div>
                 )}
-                {!loading && !error && filteredItems.length === 0 && (
+                {filteredItems.length === 0 && !error && (
                   <div className="rounded-2xl border border-gray-100 bg-white p-5 text-sm text-gray-500">
                     No posts yet for this site. Share the first update!
                   </div>

@@ -1,3 +1,5 @@
+import React, { useEffect, useRef, useState } from "react";
+const adminPhone = import.meta.env.VITE_ADMIN_PHONE || "8320354644";
 import Header from "../component/Header/Header";
 import { Outlet } from "react-router-dom";
 import { Home, CreditCard, FileText, TrendingUp, Rss, Plus } from "lucide-react";
@@ -7,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 const MainLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, refresh } = useAuth();
     
     const navLinks = [
         { path: "/", icon: Home, label: "Home" },
@@ -25,7 +27,53 @@ const MainLayout = () => {
     const isHomePage = location.pathname === '/' || location.pathname === '/home';
     const isAdmin = (user?.role ?? '').toString().toUpperCase() === 'ADMIN';
     const isClient = (user?.role ?? '').toString().toUpperCase() === 'CLIENT';
-    const paymentDueActive = Boolean(user && !(isAdmin) && (user as any).companyPaymentDue);
+    // Show payment-due modal for any user (including admins) when companyPaymentDue is set
+    const paymentDueActive = Boolean(user && (user as any).companyPaymentDue);
+    const [showPaymentModal, setShowPaymentModal] = useState<boolean>(paymentDueActive);
+
+    // Refresh user profile when the user interacts with the page (click/focus)
+    // so admin-triggered payment-due changes show up promptly.
+    const lastCheckRef = useRef<number>(0);
+    useEffect(() => {
+        if (!user) return;
+
+        const handler = async () => {
+            const now = Date.now();
+            if (now - lastCheckRef.current < 5000) return;
+            lastCheckRef.current = now;
+            try {
+                await refresh();
+            } catch (e) {
+                // ignore
+            }
+            // after refresh, read persisted user to determine updated due status
+            try {
+                const stored = localStorage.getItem('authUser');
+                if (stored) {
+                    const parsed = JSON.parse(stored) as any;
+                    if (parsed && parsed.companyPaymentDue) {
+                        setShowPaymentModal(true);
+                        return;
+                    }
+                }
+            } catch (e) {
+                // ignore parse errors
+            }
+        };
+
+        document.addEventListener('click', handler);
+        window.addEventListener('focus', handler);
+        return () => {
+            document.removeEventListener('click', handler);
+            window.removeEventListener('focus', handler);
+        };
+    }, [user, isAdmin, refresh]);
+
+    // keep showPaymentModal in sync when paymentDueActive flips
+    useEffect(() => {
+        if (paymentDueActive) setShowPaymentModal(true);
+        else setShowPaymentModal(false);
+    }, [paymentDueActive]);
 
     const showToast = (message: string) => {
         try {
@@ -62,18 +110,25 @@ const MainLayout = () => {
         <>
             <Header />
             <div className="pb-32">
-                <div className={paymentDueActive ? 'pointer-events-none select-none filter blur-sm' : ''}>
+                <div className={showPaymentModal ? 'pointer-events-none select-none filter blur-sm' : ''}>
                     <Outlet />
                 </div>
                 {/* Global payment-due modal for logged-in users */}
-                {paymentDueActive && (
+                {showPaymentModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center">
                         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4 text-center">
                             <h3 className="text-lg font-semibold text-slate-800 mb-2">Payment Required</h3>
                             <p className="text-sm text-slate-600 mb-4">Your payment is due. Please contact the administrator.</p>
                             <div className="flex gap-2 justify-center">
-                                <button onClick={() => { try { navigator?.clipboard?.writeText('contact@company.com'); } catch(e){} }} className="px-4 py-2 bg-blue-600 text-white rounded">Contact Admin</button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        window.open(`https://wa.me/91${adminPhone}`);
+                                                                    }}
+                                                                    className="px-4 py-2 bg-blue-600 text-white rounded"
+                                                                >
+                                                                    Contact Admin
+                                                                </button>
                                 <button onClick={() => { try { const nav = window.location; window.location.href = nav.origin; } catch(e){} }} className="px-4 py-2 bg-gray-100 rounded">Close</button>
                             </div>
                         </div>
