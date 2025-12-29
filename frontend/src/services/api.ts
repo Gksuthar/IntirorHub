@@ -75,6 +75,7 @@ export interface FeedItemDto {
   timestamp: string;
   likes: number;
   comments: number;
+  liked?: boolean;
   siteId: string;
   siteName?: string;
   user: FeedUserDto;
@@ -362,6 +363,13 @@ export const feedApi = {
       item: FeedItemDto;
     }>(`/feed/${id}`, {
       method: "GET",
+      token,
+    }),
+  toggleLike: (id: string, token: string) =>
+    request<{
+      item: FeedItemDto;
+    }>(`/feed/${encodeURIComponent(id)}/like`, {
+      method: "POST",
       token,
     }),
 };

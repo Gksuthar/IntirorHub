@@ -204,6 +204,7 @@ const Feed: React.FC = () => {
   const [openCommentFor, setOpenCommentFor] = useState<Record<string, boolean>>({});
   const [commentsMap, setCommentsMap] = useState<Record<string, Array<{ id: string; user: string; text: string; timestamp: string }>>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
 
   const startRecording = async () => {
     try {
@@ -329,6 +330,10 @@ const Feed: React.FC = () => {
   };
 
   useEffect(() => {
+    // server-driven likes; clear any client-only state
+    // (previous localStorage-based likes no longer used)
+    setLikedMap({});
+
     const loadFeed = async () => {
       if (!token || !activeSiteId) {
         setFeedItems([]);
@@ -353,6 +358,14 @@ const Feed: React.FC = () => {
           siteName: item.siteName,
         }));
         setFeedItems(items);
+        // populate likedMap from server response
+        try {
+          const map: Record<string, boolean> = {};
+          (response.items || []).forEach((it) => {
+            if (it.id) map[it.id] = Boolean(it.liked);
+          });
+          setLikedMap(map);
+        } catch (e) {}
       } catch (err) {
         console.error("listFeed error", err);
         setError("Unable to load feed");
@@ -373,6 +386,19 @@ const Feed: React.FC = () => {
       window.addEventListener('open-add-feed', handler as EventListener);
       return () => window.removeEventListener('open-add-feed', handler as EventListener);
   }, [activeSiteId, token, location.search]);
+
+  const toggleLike = async (id: string) => {
+    if (!token) return;
+    try {
+      const resp = await feedApi.toggleLike(id, token);
+      const updated = resp.item;
+      // update list with server value
+      setFeedItems((prev) => prev.map((it) => (it.id === updated.id ? { ...it, likes: updated.likes } : it)));
+      setLikedMap((prev) => ({ ...prev, [id]: Boolean(updated.liked) }));
+    } catch (err) {
+      console.error("toggleLike error", err);
+    }
+  };
 
   const getTypeIcon = (type: FeedItem["type"]) => {
     switch (type) {
@@ -582,9 +608,13 @@ const Feed: React.FC = () => {
 
                     <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
                       <div className="flex items-center gap-4">
-                        <button className="flex items-center gap-1 text-gray-500 transition hover:text-black">
+                        <button
+                          onClick={() => toggleLike(item.id)}
+                          aria-pressed={Boolean(likedMap[item.id])}
+                          className={`flex items-center gap-1 transition ${likedMap[item.id] ? "text-blue-600" : "text-gray-500 hover:text-black"}`}
+                        >
                           <ThumbsUp className="h-5 w-5" />
-                          <span className="text-sm">{item.likes}</span>
+                          <span className="text-sm">{item.likes || 0}</span>
                         </button>
                         <button onClick={()=>setOpenCommentFor((s) => ({ ...s, [item.id]: !s[item.id] }))}  className="flex items-center gap-1 text-gray-500 transition hover:text-black">
                           <MessageSquare className="h-5 w-5" />

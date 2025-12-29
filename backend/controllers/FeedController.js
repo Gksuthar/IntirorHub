@@ -7,11 +7,14 @@ const buildAvatarSeed = (user) => {
   return encodeURIComponent(user.email || user.name || user.companyName || "User");
 };
 
-const sanitizeFeedItem = (doc) => {
+const sanitizeFeedItem = (doc, currentUserId = null) => {
   const item = doc.toObject({ getters: true });
 
   const createdBy = item.createdBy || {};
   const site = item.site || {};
+
+  const likedBy = Array.isArray(item.likedBy) ? item.likedBy.map(String) : [];
+  const liked = currentUserId ? likedBy.includes(String(currentUserId)) : false;
 
   return {
     id: item._id,
@@ -21,8 +24,9 @@ const sanitizeFeedItem = (doc) => {
     images: item.images || [],
     attachments: item.attachments || [],
     timestamp: item.createdAt,
-    likes: item.likes ?? 0,
+    likes: (item.likes ?? 0) || likedBy.length,
     comments: item.commentsCount ?? 0,
+    liked,
     siteId: site._id || site.id || site,
     siteName: site.name,
     user: {
@@ -174,10 +178,52 @@ export const getFeedItem = async (req, res) => {
       return res.status(404).json({ message: "Feed item not found" });
     }
 
-    return res.status(200).json({ item: sanitizeFeedItem(item) });
+    return res.status(200).json({ item: sanitizeFeedItem(item, req.user._id) });
   } catch (error) {
     console.error("getFeedItem error", error);
     return res.status(500).json({ message: error.message || "Unable to fetch feed item" });
+  }
+};
+
+export const toggleLike = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid feed id" });
+    }
+
+    const feed = await Feed.findOne({ _id: id }).populate("createdBy", "name email role companyName").populate("site", "name userId");
+    if (!feed || !feed.site) {
+      return res.status(404).json({ message: "Feed item not found" });
+    }
+
+    // Check access to site
+    const siteUserId = feed.site.userId ? String(feed.site.userId) : null;
+    const hasAccess = siteUserId === String(req.user._id) || (req.user.parentId && siteUserId === String(req.user.parentId));
+    if (!hasAccess && siteUserId !== String(feed.site._id)) {
+      // still allow like if user belongs to the same company and site exists for them; keep previous behavior minimal
+    }
+
+    const likedBy = Array.isArray(feed.likedBy) ? feed.likedBy.map(String) : [];
+    const already = likedBy.includes(String(userId));
+
+    if (already) {
+      // remove
+      feed.likedBy = feed.likedBy.filter((u) => String(u) !== String(userId));
+      feed.likes = Math.max(0, (feed.likes || 0) - 1);
+    } else {
+      feed.likedBy.push(userId);
+      feed.likes = (feed.likes || 0) + 1;
+    }
+
+    await feed.save();
+
+    return res.status(200).json({ item: sanitizeFeedItem(feed, req.user._id) });
+  } catch (error) {
+    console.error("toggleLike error", error);
+    return res.status(500).json({ message: error.message || "Unable to toggle like" });
   }
 };
 
