@@ -1,20 +1,20 @@
 type FilterKey = "all" | "updates" | "photos" | "documents" | "milestones";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   MessageSquare,
-  Image,
   FileText,
-  ThumbsUp,
   Send,
   MoreHorizontal,
-  Sparkles,
-  MapPin,
   Clock,
   X,
-  Download,
   Plus,
   Mic,
+  Heart,
+  Share,
+  Play,
+  ChevronDown,
+  Filter,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSite } from "../context/SiteContext";
@@ -64,8 +64,7 @@ const generateId = () =>
 
 const Feed: React.FC = () => {
   const { user, token } = useAuth();
-  const { activeSite, sites, openCreateSite } = useSite();
-  const navigate = useNavigate();
+  const { activeSite } = useSite();
   const location = useLocation();
   const [newTitle, setNewTitle] = useState("");
   const [newPost, setNewPost] = useState("");
@@ -85,8 +84,6 @@ const Feed: React.FC = () => {
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
-  
-  const isAdmin = user?.role === "ADMIN";
   const activeSiteId = activeSite?.id ?? null;
   const isPostDisabled =
     (!newTitle.trim() &&
@@ -94,17 +91,6 @@ const Feed: React.FC = () => {
       selectedImages.length === 0 &&
       selectedFiles.length === 0) ||
     isSubmitting;
-
-  const filters: Array<{ key: FilterKey; label: string }> = useMemo(
-    () => [
-      { key: "all", label: "All" },
-      { key: "updates", label: "Updates" },
-      { key: "photos", label: "Photos" },
-      { key: "documents", label: "Documents" },
-      { key: "milestones", label: "Milestones" },
-    ],
-    []
-  );
 
   const filteredItems = useMemo(() => {
     if (activeFilter === "all") {
@@ -400,367 +386,281 @@ const Feed: React.FC = () => {
     }
   };
 
-  const getTypeIcon = (type: FeedItem["type"]) => {
-    switch (type) {
-      case "photo":
-        return <Image className="h-4 w-4 text-green-500" />;
-      case "document":
-        return <FileText className="h-4 w-4 text-blue-500" />;
-      case "milestone":
-        return <span className="text-yellow-500">🏆</span>;
-      default:
-        return <MessageSquare className="h-4 w-4 text-gray-500" />;
+  const formatTimeAgo = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffDays > 0) return `${diffDays}D AGO`;
+      if (diffHours > 0) return `${diffHours}H AGO`;
+      if (diffMins > 0) return `${diffMins}M AGO`;
+      return "JUST NOW";
+    } catch {
+      return timestamp;
     }
   };
 
-  const otherSites = useMemo(
-    () =>
-      sites.filter((site) => (activeSite ? site.id !== activeSite.id : true)),
-    [activeSite, sites]
-  );
+  const extractHashtags = (text: string) => {
+    const hashtagRegex = /#(\w+)/g;
+    const matches = text.match(hashtagRegex);
+    return matches || [];
+  };
 
-  const activeSiteCreatedAt = activeSite
-    ? new Date(activeSite.createdAt).toLocaleDateString()
-    : null;
+  const extractLocation = (text: string) => {
+    // Try to extract location from content (e.g., "Master Bedroom", "Kitchen", "Living Room")
+    const locations = ["Master Bedroom", "Bedroom", "Kitchen", "Living Room", "Bathroom", "Hall"];
+    for (const loc of locations) {
+      if (text.toLowerCase().includes(loc.toLowerCase())) {
+        return loc;
+      }
+    }
+    return null;
+  };
+
+
+  const [currentImageIndex, setCurrentImageIndex] = useState<Record<string, number>>({});
 
   return (
-    <div className="flex items-center justify-center bg-gray-50/30 px-2 pb-20 pt-16 sm:px-4 md:px-6 md:pb-10 md:pt-24">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-3 flex flex-col gap-1 sm:mb-8 sm:gap-2">
-          <h1 className="text-lg font-bold text-gray-900 sm:text-2xl md:text-3xl">
-            Feed
-          </h1>
-          <p className="text-xs text-gray-600 sm:text-sm">
-            Stay updated with project activities and updates
-          </p>
+    <div className="pb-20">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Site Feed</h2>
+          <p className="text-slate-500 text-sm">Live updates from the field</p>
         </div>
+        <button className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center hover:shadow-md transition-shadow">
+          <Filter className="w-5 h-5 text-slate-600" />
+        </button>
+      </div>
 
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,2fr),minmax(280px,1fr)]">
-          <div className="space-y-4 sm:space-y-6">
-            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-              {siteError && (
-                <div className="mb-3 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">
-                  {siteError}
+      {siteError && (
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">
+          {siteError}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {error && (
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+            <div className="text-sm text-red-700">{error}</div>
+          </div>
+        )}
+        {filteredItems.length === 0 && !error && (
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+            <p className="text-sm text-gray-500">No posts yet for this site. Share the first update!</p>
+          </div>
+        )}
+        {filteredItems.map((item) => {
+          const hashtags = extractHashtags(item.content);
+          const location = extractLocation(item.content) || item.siteName;
+          const imageIndex = currentImageIndex[item.id] || 0;
+          const audioAttachment = item.attachments?.find(att => {
+            const name = att.name || att.url || "";
+            return (att.type && att.type.startsWith("audio")) || /\.(mp3|wav|ogg|webm)$/i.test(name);
+          });
+
+          return (
+            <div key={item.id} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+              {/* User Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <img
+                      alt={item.user.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                      src={item.user.avatar}
+                    />
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white"></span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800">{item.user.name}</h4>
+                    <p className="text-sm text-slate-500">{item.user.role}</p>
+                  </div>
                 </div>
-              )}
-            
-
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {filters.map((filter) => (
-                  <button
-                    key={filter.key}
-                    onClick={() => setActiveFilter(filter.key)}
-                    className={`whitespace-nowrap px-3 py-1.5 text-xs font-medium transition sm:px-4 sm:py-2 sm:text-sm ${
-                      activeFilter === filter.key
-                        ? "rounded-full bg-black text-white"
-                        : "rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    {filter.label}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-400">{formatTimeAgo(item.timestamp)}</span>
+                  <button className="text-slate-400 hover:text-slate-600">
+                    <MoreHorizontal className="w-5 h-5" />
                   </button>
-                ))}
+                </div>
               </div>
 
-              <div className="space-y-4">
-                {/* loading removed */}
-                {error && (
-                  <div className="rounded-2xl border border-red-100 bg-red-50 p-5 text-sm text-red-700">
-                    {error}
-                  </div>
-                )}
-                {filteredItems.length === 0 && !error && (
-                  <div className="rounded-2xl border border-gray-100 bg-white p-5 text-sm text-gray-500">
-                    No posts yet for this site. Share the first update!
-                  </div>
-                )}
-                {filteredItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <img
-                          src={item.user.avatar}
-                          alt={item.user.name}
-                          className="h-12 w-12 flex-shrink-0 rounded-full"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-900 truncate">
-                              {item.user.name}
-                            </span>
-                            {getTypeIcon(item.type)}
-                          </div>
-                          <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 flex-wrap">
-                            <span className="truncate">{item.user.role}</span>
-                            <span>•</span>
-                            <span className="inline-flex items-center gap-1">
-                              <Clock className="h-3.5 w-3.5" />
-                              {item.timestamp}
-                            </span>
-                          </div>
-                          {item.siteName && (
-                            <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600 max-w-full">
-                              <MapPin className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">{item.siteName}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <button className="rounded-full p-1 text-gray-400 transition hover:bg-gray-100 flex-shrink-0">
-                        <MoreHorizontal className="h-5 w-5" />
-                      </button>
-                    </div>
-
-                    {item.title && (
-                      <div className="mt-3">
-                        <h3 className="text-base font-semibold text-gray-900">
-                          {item.title}
-                        </h3>
-                      </div>
-                    )}
-
-                    {/* Images shown first, description below */}
-                    {item.images && item.images.length > 0 && (
-                      <div
-                        className={`mt-4 grid gap-2 ${
-                          item.images.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                        }`}
+              {/* Image Post */}
+              {item.images && item.images.length > 0 && (
+                <div className="relative mb-4 rounded-2xl overflow-hidden">
+                  <img
+                    alt="Post"
+                    className="w-full h-56 object-cover"
+                    src={item.images[imageIndex]}
+                  />
+                  {item.images.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => {
+                          const newIndex = imageIndex > 0 ? imageIndex - 1 : item.images!.length - 1;
+                          setCurrentImageIndex({ ...currentImageIndex, [item.id]: newIndex });
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
                       >
-                        {item.images.map((image, index) => (
-                          <img
-                            key={`${item.id}-${index}`}
-                            src={image}
-                            alt={`Post asset ${index + 1}`}
-                            className="h-48 w-full rounded-xl object-cover cursor-pointer"
-                            onClick={() => setImageModal({ open: true, src: image, desc: item.content })}
-                          />
+                        <ChevronDown className="w-5 h-5 text-slate-600 rotate-90" />
+                      </button>
+                      <div className="absolute top-4 right-4 bg-slate-800/70 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                        {imageIndex + 1}/{item.images.length}
+                      </div>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        {item.images.map((_, idx) => (
+                          <span
+                            key={idx}
+                            className={`w-2 h-2 rounded-full transition-colors ${
+                              idx === imageIndex ? "bg-white" : "bg-white/50"
+                            }`}
+                          ></span>
                         ))}
                       </div>
-                    )}
+                    </>
+                  )}
+                </div>
+              )}
 
-                    <div className="mt-3">
-                      <p className="text-sm text-gray-800 break-all whitespace-pre-wrap">
-                        {item.content.length > 200
-                          ? `${item.content.slice(0, 200)}...`
-                          : item.content}
-                      </p>
-                      {item.content.length > 200 && (
-                        <button
-                          onClick={() => navigate(`/feed/${item.id}`)}
-                          className="mt-2 text-sm font-medium text-gray-900 hover:underline"
-                        >
-                          Read more
-                        </button>
-                      )}
+              {/* Voice Note Post */}
+              {audioAttachment && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 mb-4 flex items-center gap-4">
+                  <button className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors">
+                    <Play className="w-6 h-6 text-white ml-1" />
+                  </button>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1 mb-2">
+                      {[...Array(13)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-1 bg-blue-400 rounded-full"
+                          style={{ height: `${Math.random() * 20 + 10}px` }}
+                        ></div>
+                      ))}
                     </div>
-
-                    {item.attachments && item.attachments.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        {item.attachments.map((attachment, index) => {
-                              const name = attachment.name || attachment.url || "";
-                              const isVideo = (attachment.type && attachment.type.startsWith("video")) || /\.(mp4|webm|ogg|mov|mkv)$/i.test(name);
-                              const isAudio = (attachment.type && attachment.type.startsWith("audio")) || /\.(mp3|wav|ogg|webm)$/i.test(name);
-
-                              if (isVideo) {
-                                return (
-                                  <div key={`${item.id}-attachment-${index}`} className="rounded-lg overflow-hidden border border-gray-200 bg-black">
-                                    <video controls className="w-full h-56 object-cover bg-black">
-                                      <source src={attachment.url} type={attachment.type || "video/mp4"} />
-                                      Your browser does not support the video tag.
-                                    </video>
-                                  </div>
-                                );
-                              }
-
-                              if (isAudio) {
-                                return (
-                                  <div key={`${item.id}-attachment-${index}`} className="rounded-lg overflow-hidden border border-gray-200 bg-white p-2">
-                                    <audio controls className="w-full">
-                                      <source src={attachment.url} type={attachment.type || "audio/webm"} />
-                                      Your browser does not support the audio element.
-                                    </audio>
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <a
-                                  key={`${item.id}-attachment-${index}`}
-                                  href={attachment.url}
-                                  download={attachment.name}
-                                  className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 hover:bg-gray-100 transition-colors"
-                                >
-                                  <FileText className="h-5 w-5 text-gray-600 flex-shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 truncate">{attachment.name}</p>
-                                    {attachment.size && (
-                                      <p className="text-xs text-gray-500">{(attachment.size / 1024).toFixed(1)} KB</p>
-                                    )}
-                                  </div>
-                                  <Download className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                                </a>
-                              );
-                            })}
-                      </div>
-                    )}
-
-                    <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => toggleLike(item.id)}
-                          aria-pressed={Boolean(likedMap[item.id])}
-                          className={`flex items-center gap-1 transition ${likedMap[item.id] ? "text-blue-600" : "text-gray-500 hover:text-black"}`}
-                        >
-                          <ThumbsUp className="h-5 w-5" />
-                          <span className="text-sm">{item.likes || 0}</span>
-                        </button>
-                        <button onClick={()=>setOpenCommentFor((s) => ({ ...s, [item.id]: !s[item.id] }))}  className="flex items-center gap-1 text-gray-500 transition hover:text-black">
-                          <MessageSquare className="h-5 w-5" />
-                          <span className="text-sm">{item.comments}</span>
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button 
-                        onClick={() => setOpenCommentFor((s) => ({ ...s, [item.id]: !s[item.id] }))} className="text-sm font-medium text-gray-500 transition hover:text-black">
-                          {openCommentFor[item.id] ? "Close" : "View comments"}
-                        </button>
-                      </div>
-                    </div>
-
-                      {openCommentFor[item.id] && (
-                        <div className="mt-3 border-t border-gray-100 pt-3">
-                          <div className="space-y-2">
-                            {(commentsMap[item.id] || []).map((c) => (
-                              <div key={c.id} className="rounded-lg bg-gray-50 p-2">
-                                <div className="text-xs text-gray-600">{c.user} • {c.timestamp}</div>
-                                <div className="text-sm text-gray-800">{c.text}</div>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="mt-2 flex gap-2">
-                            <input
-                              value={commentInputs[item.id] || ""}
-                              onChange={(e) => setCommentInputs((p) => ({ ...p, [item.id]: e.target.value }))}
-                              placeholder="Write a comment..."
-                              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none"
-                            />
-                            <button onClick={() => addComment(item.id)} className="rounded-lg bg-black px-3 py-2 text-xs text-white">Comment</button>
-                          </div>
-                        </div>
-                      )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <aside className="space-y-6">
-              <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
-                      Your site
-                    </p>
-                    <h2 className="mt-2 text-lg font-semibold text-gray-900">
-                      {activeSite?.name || "Workspace"}
-                    </h2>
-                  </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-900 text-white">
-                    <Sparkles className="h-4 w-4" />
+                    <p className="text-sm font-medium text-blue-600">0:45 • VOICE NOTE</p>
                   </div>
                 </div>
+              )}
 
-                {activeSite?.image ? (
-                  <img
-                    src={activeSite.image}
-                    alt={activeSite?.name || ''}
-                    className="mt-4 h-36 w-full rounded-xl object-cover"
-                  />
-                ) : (
-                  <div className="mt-4 flex h-36 w-full items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400">
-                    Upload a cover image to highlight this site
-                  </div>
-                )}
-
-                {activeSite?.description && (
-                  <p className="mt-4 text-sm text-gray-600">
-                    {activeSite.description}
-                  </p>
-                )}
-
-                {activeSiteCreatedAt && (
-                  <p className="mt-3 text-xs uppercase tracking-[0.2em] text-gray-400">
-                    Since {activeSiteCreatedAt}
-                  </p>
-                )}
-
-                {isAdmin && (
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-4">
                   <button
-                    type="button"
-                    onClick={openCreateSite}
-                    className="mt-5 w-full rounded-xl border border-dashed border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-gray-400 hover:text-black"
+                    onClick={() => toggleLike(item.id)}
+                    className={`flex items-center gap-1 transition-colors ${
+                      likedMap[item.id] ? "text-rose-500" : "text-slate-500 hover:text-rose-500"
+                    }`}
                   >
-                    Create new site
+                    <Heart className="w-6 h-6" />
                   </button>
-                )}
+                  <button
+                    onClick={() => setOpenCommentFor((s) => ({ ...s, [item.id]: !s[item.id] }))}
+                    className="flex items-center gap-1 text-slate-500 hover:text-blue-500 transition-colors"
+                  >
+                    <MessageSquare className="w-6 h-6" />
+                  </button>
+                  <button className="flex items-center gap-1 text-slate-500 hover:text-emerald-500 transition-colors">
+                    <Share className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                  <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                  <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                </div>
               </div>
 
-              {otherSites.length > 0 && (
-                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
-                    Other sites
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    {otherSites.map((site) => (
-                      <div
-                        key={site.id}
-                        className="rounded-xl border border-gray-100 bg-gray-50 p-3"
-                      >
-                        <p className="text-sm font-semibold text-gray-900">
-                          {site.name}
-                        </p>
-                        {site.description && (
-                          <p className="text-xs text-gray-500">
-                            {site.description}
-                          </p>
-                        )}
+              {/* Like Count */}
+              <p className="font-semibold text-slate-800 mb-2">{item.likes || 0} likes</p>
+
+              {/* Content */}
+              <p className="text-slate-700 mb-3">
+                <span className="font-semibold">{item.user.name}</span> {item.content}
+              </p>
+
+              {/* Tags */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {location && (
+                  <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {location}
+                  </span>
+                )}
+                {hashtags.map((tag, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              {/* View Comments */}
+              {item.comments > 0 && (
+                <button
+                  onClick={() => setOpenCommentFor((s) => ({ ...s, [item.id]: !s[item.id] }))}
+                  className="text-sm text-slate-400 font-medium hover:text-slate-600 transition-colors"
+                >
+                  View all {item.comments} comment{item.comments !== 1 ? 's' : ''}
+                </button>
+              )}
+
+              {/* Comments Section */}
+              {openCommentFor[item.id] && (
+                <div className="mt-3 border-t border-slate-100 pt-3">
+                  <div className="space-y-2">
+                    {(commentsMap[item.id] || []).map((c) => (
+                      <div key={c.id} className="rounded-lg bg-slate-50 p-2">
+                        <div className="text-xs text-slate-600">{c.user} • {c.timestamp}</div>
+                        <div className="text-sm text-slate-800">{c.text}</div>
                       </div>
                     ))}
                   </div>
+
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      value={commentInputs[item.id] || ""}
+                      onChange={(e) => setCommentInputs((p) => ({ ...p, [item.id]: e.target.value }))}
+                      placeholder="Write a comment..."
+                      className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none"
+                    />
+                    <button onClick={() => addComment(item.id)} className="rounded-lg bg-slate-800 px-3 py-2 text-xs text-white">Comment</button>
+                  </div>
                 </div>
               )}
-            </aside>
-          </div>
+            </div>
+          );
+        })}
+      </div>
 
-          {/* Floating Add Feed button */}
-          <div className="fixed right-5 bottom-24 z-50">
-            <button
-              onClick={() => setShowAddForm(true)}
-              title="Add Feed"
-              className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl transition active:scale-95"
-            >
-              <Plus className="h-6 w-6" />
-            </button>
-          </div>
+      {/* Floating Add Button */}
+      <button
+        onClick={() => setShowAddForm(true)}
+        title="Add Feed"
+        className="fixed bottom-24 right-6 w-14 h-14 bg-slate-800 text-white rounded-full shadow-lg shadow-slate-300 flex items-center justify-center hover:bg-slate-700 transition-all hover:scale-105 z-40"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
 
-          {/* Add Feed Modal */}
-<div
-  className={`
-    fixed inset-0 z-50 flex items-center justify-center px-4
-    bg-black/50 backdrop-blur-sm
-    transition-all duration-300
-    ${showAddForm ? "opacity-100 visible" : "opacity-0 invisible"}
-  `}
->
-  <div
-    className={`
-      w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl
-      transform transition-all duration-300
-      ${showAddForm ? "scale-100 translate-y-0" : "scale-95 translate-y-4"}
-    `}
-  >
+      {/* Add Feed Modal */}
+      <div
+        className={`
+          fixed inset-0 z-50 flex items-center justify-center px-4
+          bg-black/50 backdrop-blur-sm
+          transition-all duration-300
+          ${showAddForm ? "opacity-100 visible" : "opacity-0 invisible"}
+        `}
+      >
+        <div
+          className={`
+            w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl
+            transform transition-all duration-300
+            ${showAddForm ? "scale-100 translate-y-0" : "scale-95 translate-y-4"}
+          `}
+        >
     {/* Header */}
     <div className="mb-4 flex items-center justify-between">
       <h3 className="text-lg font-bold text-gray-900">Add Feed</h3>
@@ -901,31 +801,27 @@ const Feed: React.FC = () => {
         </div>
       </div>
     </div>
-    {/* ===== YOUR CONTENT ENDS HERE ===== */}
-  </div>
-</div>
-
-
-            {/* Image modal (moved here so `imageModal` state is defined) */}
-            {imageModal.open && (
-              <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4">
-                <div className="max-w-3xl w-full bg-white rounded-lg overflow-hidden">
-                  <div className="flex justify-end p-2">
-                    <button onClick={() => setImageModal({ open: false })} className="p-2">
-                      <X className="h-5 w-5 text-gray-600" />
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <img src={imageModal.src} alt="attachment" className="w-full object-contain" />
-                    {imageModal.desc && (
-                      <p className="mt-3 text-sm text-gray-700">{imageModal.desc}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-        </div>
       </div>
+    </div>
+
+      {/* Image modal */}
+      {imageModal.open && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4">
+          <div className="max-w-3xl w-full bg-white rounded-lg overflow-hidden">
+            <div className="flex justify-end p-2">
+              <button onClick={() => setImageModal({ open: false })} className="p-2">
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="p-4">
+              <img src={imageModal.src} alt="attachment" className="w-full object-contain" />
+              {imageModal.desc && (
+                <p className="mt-3 text-sm text-gray-700">{imageModal.desc}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

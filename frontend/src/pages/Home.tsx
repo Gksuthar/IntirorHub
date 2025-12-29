@@ -1,5 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Activity,
+  Clock,
+  Calendar,
+  Check,
+  TrendingUp,
+  Package,
+  CreditCard,
+  ArrowDownLeft,
+  ChevronDown,
+  FileText,
+} from "lucide-react";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
 import { feedApi, expenseApi } from "../services/api";
@@ -16,6 +28,7 @@ interface FeedItem {
   content: string;
   timestamp: string;
   siteName?: string;
+  images?: string[];
 }
 
 const Home: React.FC = () => {
@@ -24,27 +37,37 @@ const Home: React.FC = () => {
   const { token } = useAuth();
   const [recentFeeds, setRecentFeeds] = useState<FeedItem[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
-  const progress = 62;
-  const daysLeft = 68;
 
   // Budget calculations
   const totalBudget = activeSite?.contractValue ?? 0;
-  // Usage breakdown:
-  // - usedApproved: sum of expenses that are approved (committed), regardless of payment status
-  // - usedPaid: sum of expenses that are approved and already paid
   const usedApproved = expenses
     .filter((e) => e.status === 'approved')
     .reduce((s, it) => s + (it.amount || 0), 0);
   const usedPaid = expenses
     .filter((e) => e.status === 'approved' && e.paymentStatus === 'paid')
     .reduce((s, it) => s + (it.amount || 0), 0);
-
-  // By default display committed (approved) usage — change to `usedPaid` if you prefer only paid amounts
   const usedAmount = usedApproved;
   const remainingAmount = Math.max(0, totalBudget - usedAmount);
   const dueAmount = expenses
     .filter((e) => e.paymentStatus === 'due')
     .reduce((s, it) => s + (it.amount || 0), 0);
+  
+  // Calculate payment progress percentage
+  const paymentProgress = totalBudget > 0 ? Math.round((usedPaid / totalBudget) * 100) : 0;
+  
+  // Calculate expense health (budget usage percentage)
+  const expenseHealthPercent = totalBudget > 0 ? Math.round((usedAmount / totalBudget) * 100) : 0;
+  const expenseHealthRemaining = remainingAmount;
+  
+  // Calculate days remaining (mock data - should come from site data)
+  const daysRemaining = 34;
+  
+  // Mock BOQ stats (should be fetched from API)
+  const boqStats = {
+    total: 142,
+    approved: 98,
+    pending: 44,
+  };
 
   useEffect(() => {
     const loadRecentFeeds = async () => {
@@ -63,6 +86,7 @@ const Home: React.FC = () => {
           content: item.content,
           timestamp: item.timestamp,
           siteName: item.siteName,
+          images: item.images || [],
         }));
         setRecentFeeds(feeds);
       } catch (err) {
@@ -92,20 +116,6 @@ const Home: React.FC = () => {
     fetchExpenses();
   }, [activeSite, token]);
 
-  const getIconForFeed = (item: FeedItem) => {
-    if (item.type === "photo") return "🖼️";
-    if (item.type === "document") return "📄";
-    if (item.type === "milestone") return "🏆";
-    return "⚡";
-  };
-
-  const getBgForFeed = (item: FeedItem) => {
-    if (item.type === "photo") return "bg-amber-100";
-    if (item.type === "document") return "bg-blue-100";
-    if (item.type === "milestone") return "bg-green-100";
-    return "bg-sky-100";
-  };
-
   const getRelativeTime = (timestamp: string) => {
     try {
       const date = new Date(timestamp);
@@ -116,7 +126,10 @@ const Home: React.FC = () => {
       const diffHours = Math.floor(diffMins / 60);
       const diffDays = Math.floor(diffHours / 24);
 
-      if (diffDays > 0) return `${diffDays}d ago`;
+      if (diffDays > 0) {
+        if (diffDays === 1) return 'Yesterday';
+        return `${diffDays} days ago`;
+      }
       if (diffHours > 0) return `${diffHours}h ago`;
       if (diffMins > 0) return `${diffMins}m ago`;
       return "just now";
@@ -124,149 +137,338 @@ const Home: React.FC = () => {
       return timestamp;
     }
   };
-// inline-flex items-center px-2 py-1  rounded-lg text-xs font-medium mt-1
-  return (
-    <>
-      {/* Main Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm w-full mt-20 mb-8">
-        {/* Last Updated */}
-        <p className="text-xs text-slate-400 mb-4 text-center sm:text-left">Last updated 8 minutes ago</p>
-        
-        {/* Top Section with Progress Circle */}
-          <div className="flex items-start gap-6 sm:gap-8 mb-8">
-            {/* Circular Progress */}
-            <div className="flex-shrink-0">
-              <div className="relative w-28 h-28 sm:w-32 sm:h-32">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    stroke="#e5e7eb"
-                    strokeWidth="10"
-                    fill="none"
-                  />
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    stroke="#1e293b"
-                    strokeWidth="10"
-                    fill="none"
-                    strokeDasharray="314"
-                    strokeDashoffset={314 - (314 * progress) / 100}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <p className="text-3xl sm:text-4xl font-bold text-slate-900">{daysLeft}</p>
-                  <p className="text-xs text-slate-400">Days Left</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Stage Info */}
-            <div className="flex-1">
-              <div className="mb-5">
-                <p className="text-xs text-slate-400 mb-1.5">Current Stage</p>
-                <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Carpentry Work</h2>
+  const formatTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true 
+      });
+    } catch {
+      return timestamp;
+    }
+  };
+
+  const getFeedImage = (feed: FeedItem) => {
+    if (feed.images && feed.images.length > 0) {
+      return feed.images[0];
+    }
+    return null;
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 100000) {
+      return `₹${(amount / 100000).toFixed(2)}L`;
+    }
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
+
+  const siteName = activeSite?.name || "Project";
+  const siteCategory =  "Residential";
+  const startDate = "12 Oct";
+  const targetDate = "20 Dec";
+
+  return (
+    <div className="relative max-w-md mx-auto px-0 pt-6 pb-28">
+      {/* Project Overview Card */}
+      <div className="bg-gradient-to-br from-indigo-600 via-blue-500 to-cyan-500 rounded-3xl p-6 mb-6 shadow-xl shadow-blue-300/40 relative overflow-hidden group">
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl transform translate-x-10 -translate-y-10 group-hover:scale-150 transition-transform duration-700"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-300/20 rounded-full blur-2xl transform -translate-x-10 translate-y-10 group-hover:scale-150 transition-transform duration-700"></div>
+        </div>
+        
+        <div className="flex items-center justify-between mb-4 relative">
+          <span className="bg-white/25 backdrop-blur-sm text-white text-[11px] font-bold px-4 py-2 rounded-full tracking-wide inline-flex items-center gap-2">
+            <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+            ELECTRICAL & FALSE CEILING
+          </span>
+          <span className="text-white/60 text-xs font-medium">{siteCategory}</span>
+        </div>
+
+        <div className="text-center mb-5 relative">
+          <h2 className="text-2xl font-bold text-white leading-tight drop-shadow-lg">{siteName}</h2>
+        </div>
+
+        <div className="flex justify-center mb-6">
+          <div className="bg-white/20 backdrop-blur-md rounded-3xl px-8 py-4 text-center border border-white/20 shadow-2xl transform hover:scale-105 transition-all duration-300 relative">
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+              <span className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/50 block"></span>
+            </div>
+            <div className="flex items-baseline justify-center gap-2">
+              <span className="text-5xl font-bold text-white drop-shadow-lg">{daysRemaining}</span>
+              <span className="text-lg font-semibold text-white/80">Days</span>
+            </div>
+            <span className="text-[11px] font-bold text-white/60 uppercase tracking-widest">Remaining</span>
+          </div>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center shadow-inner">
+                <Calendar className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-xs text-slate-400 mb-1.5">Next Stage</p>
-                <h3 className="text-base sm:text-lg font-medium text-indigo-600">Finishing</h3>
+                <p className="text-[10px] text-white/50 font-bold uppercase tracking-wider">Start</p>
+                <p className="text-white font-bold">{startDate}</p>
+              </div>
+            </div>
+            <div className="flex-1 flex items-center justify-center px-4">
+              <div className="flex-1 h-[3px] bg-white/20 rounded-full relative overflow-hidden">
+                <div className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full" style={{ width: '66%' }}></div>
+                <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full border-2 border-white shadow-lg shadow-emerald-400/50 animate-pulse" style={{ left: '66%' }}></div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-[10px] text-white/50 font-bold uppercase tracking-wider">Target</p>
+                <p className="text-white font-bold">{targetDate}</p>
+              </div>
+              <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center shadow-inner">
+                <Check className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Project Progress Bar */}
-          <div className="mb-8 pb-8 border-b border-slate-100">
-            <div className="flex items-center justify-between mb-2.5">
-              <span className="text-sm font-medium text-slate-700">Project Progress</span>
-              <span className="text-sm font-bold text-slate-900">{progress}%</span>
-            </div>
-            <div className="w-full bg-slate-200 rounded-full h-2">
-              <div
-                className="bg-slate-900 h-2 rounded-full transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-slate-400 mt-2.5">
-              Expected Completion: <span className="font-medium text-slate-600">25 Dec 2025</span>
-            </p>
+      {/* Quick Actions */}
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <button 
+          onClick={() => navigate('/home/feed')}
+          className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-slate-100/50 flex flex-col items-center gap-2 hover:shadow-xl transition-all duration-300 group relative"
+        >
+          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+            <Activity className="w-6 h-6 text-white" />
           </div>
+          <span className="text-xs font-bold text-slate-600 group-hover:text-slate-800">Feed</span>
+        </button>
+        
+        <button 
+          onClick={() => navigate('/home/expenses')}
+          className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-slate-100/50 flex flex-col items-center gap-2 hover:shadow-xl transition-all duration-300 group relative"
+        >
+          <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+            <Clock className="w-6 h-6 text-white" />
+          </div>
+          <span className="text-xs font-bold text-slate-600 group-hover:text-slate-800">Expenses</span>
+        </button>
+        
+        <button 
+          onClick={() => navigate('/home/boq')}
+          className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-slate-100/50 flex flex-col items-center gap-2 hover:shadow-xl transition-all duration-300 group relative"
+        >
+          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+            <FileText className="w-6 h-6 text-white" />
+          </div>
+          <span className="text-xs font-bold text-slate-600 group-hover:text-slate-800">BOQ</span>
+        </button>
+      </div>
 
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-3 gap-6 mb-8 pb-8 border-b border-slate-100">
-            {/* Budget */}
-            <div className="text-center">
-              <p className="text-xs text-slate-400 mb-2">Budget</p>
-              <p className="text-xl sm:text-2xl font-bold text-slate-900">₹{(usedAmount / 100000).toFixed(2)}L</p>
-                <p className="text-xs text-slate-400 mt-1">of ₹{(totalBudget / 100000).toFixed(2)}L</p>
-                <p className="text-xs text-slate-400 mt-1">Paid: <span className="font-medium text-slate-900">₹{(usedPaid / 100000).toFixed(2)}L</span> • Remaining: <span className="font-medium text-green-600">₹{(remainingAmount / 100000).toFixed(2)}L</span> • Due: <span className="font-medium text-red-600">₹{(dueAmount / 100000).toFixed(2)}L</span></p>
+      {/* Total Value Card */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 mb-4 shadow-lg border border-slate-100/50 group">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl flex items-center justify-center shadow-lg shadow-slate-300/50 group-hover:shadow-xl transition-shadow">
+              <CreditCard className="w-5 h-5 text-white" />
             </div>
+            <span className="text-xs font-bold tracking-wider text-slate-400">TOTAL VALUE</span>
+          </div>
+          <span className="flex items-center gap-1.5 text-emerald-600 text-sm font-bold bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-1.5 rounded-full shadow-sm border border-emerald-100">
+            <TrendingUp className="w-4 h-4 animate-pulse" />
+            ON TRACK
+          </span>
+        </div>
+        <p className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-4">
+          {formatCurrency(totalBudget)}
+        </p>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-semibold text-slate-500">Payment Progress</span>
+          <span className="text-sm font-bold text-indigo-600">{paymentProgress}%</span>
+        </div>
+        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden relative">
+          <div className="h-full bg-gradient-to-r from-indigo-500 via-blue-500 to-cyan-500 rounded-full transition-all duration-1000 relative" style={{ width: `${paymentProgress}%` }}>
+            <div className="absolute inset-0 shimmer"></div>
+          </div>
+        </div>
+      </div>
 
-            {/* Approvals */}
-            <div className="text-center">
-              <p className="text-xs text-slate-400 mb-2">Approvals</p>
-              <p className="text-xl sm:text-2xl font-bold text-orange-500">2</p>
-              <p className="text-xs text-slate-400 mt-1">Pending</p>
+      {/* Payment Summary Cards */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-slate-100/50 group">
+          <div className="w-11 h-11 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 shadow-inner group-hover:scale-110 transition-transform">
+            <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
+          </div>
+          <p className="text-[10px] font-bold tracking-wider text-emerald-600 mb-1">RECEIVED</p>
+          <p className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+            {formatCurrency(usedPaid)}
+          </p>
+        </div>
+        
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-slate-100/50 group">
+          <div className="w-11 h-11 bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl flex items-center justify-center mb-3 shadow-inner group-hover:scale-110 transition-transform">
+            <Clock className="w-5 h-5 text-amber-600" />
+          </div>
+          <p className="text-[10px] font-bold tracking-wider text-amber-600 mb-1">DUE AMOUNT</p>
+          <p className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+            {formatCurrency(dueAmount)}
+          </p>
+        </div>
+      </div>
+
+      {/* Expense Health Card */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 mb-6 shadow-lg border border-slate-100/50">
+        <h3 className="text-lg font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-4 flex items-center gap-2">
+          <Activity className="w-5 h-5 text-amber-500" />
+          Expense Health
+        </h3>
+        <div className="flex items-center gap-6">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-200 to-orange-200 rounded-full blur-xl opacity-50 group-hover:opacity-80 transition-opacity"></div>
+            <svg height="110" width="110" className="transform -rotate-90 relative">
+              <circle stroke="#f1f5f9" fill="transparent" strokeWidth="14" r="48" cx="55" cy="55"></circle>
+              <circle 
+                stroke="url(#expenseGradient)" 
+                fill="transparent" 
+                strokeWidth="14" 
+                strokeDasharray={`${301.59} ${301.59}`}
+                strokeLinecap="round" 
+                r="48" 
+                cx="55" 
+                cy="55"
+                style={{ strokeDashoffset: 301.59 - (301.59 * expenseHealthPercent / 100), transition: 'stroke-dashoffset 1s ease-out' }}
+              ></circle>
+              <defs>
+                <linearGradient id="expenseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#f59e0b"></stop>
+                  <stop offset="100%" stopColor="#f97316"></stop>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold text-slate-800">{expenseHealthPercent}%</span>
+              <span className="text-[10px] font-semibold text-slate-400">USED</span>
             </div>
-
-            {/* Health */}
-            <div className="text-center">
-              <p className="text-xs text-slate-400 mb-2">Health</p>
-              <p className="text-xl sm:text-2xl font-bold text-emerald-500">92%</p>
-              <p className="text-xs text-slate-400 mt-1">On Track</p>
+          </div>
+          <div className="flex-1">
+            <div className="mb-3">
+              <p className="text-[10px] font-semibold tracking-wider text-slate-400 mb-1">TOTAL BUDGET</p>
+              <p className="text-xl font-bold text-slate-800">{formatCurrency(totalBudget)}</p>
+            </div>
+            <div className="border-t border-slate-100 pt-3">
+              <p className="text-[10px] font-semibold tracking-wider text-slate-400 mb-1">REMAINING</p>
+              <p className="text-xl font-bold text-emerald-500">{formatCurrency(expenseHealthRemaining)}</p>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Recent Site Updates */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-base font-semibold text-slate-900">Recent Site Updates</h3>
-            <button 
-              onClick={() => navigate('/home/feed')}
-              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
-            >
-              View All
-            </button>
+      {/* BOQ Summary */}
+      <div className="mb-6">
+        <h3 className="text-lg font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-4 flex items-center gap-2">
+          <Package className="w-5 h-5 text-blue-500" />
+          BOQ Summary
+        </h3>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-slate-100/50 text-center group">
+            <div className="w-11 h-11 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-inner group-hover:scale-110 transition-transform">
+              <Package className="w-5 h-5 text-blue-600" />
+            </div>
+            <p className="text-[10px] font-bold tracking-wider text-slate-400 mb-1">TOTAL</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{boqStats.total}</p>
           </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-slate-100/50 text-center group">
+            <div className="w-11 h-11 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-inner group-hover:scale-110 transition-transform">
+              <Check className="w-5 h-5 text-emerald-600" />
+            </div>
+            <p className="text-[10px] font-bold tracking-wider text-slate-400 mb-1">APPROVED</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">{boqStats.approved}</p>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-slate-100/50 text-center group">
+            <div className="w-11 h-11 bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-inner group-hover:scale-110 transition-transform">
+              <Clock className="w-5 h-5 text-amber-600" />
+            </div>
+            <p className="text-[10px] font-bold tracking-wider text-slate-400 mb-1">PENDING</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">{boqStats.pending}</p>
+          </div>
+        </div>
+      </div>
 
+      {/* Site Updates */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent flex items-center gap-2">
+            <Activity className="w-5 h-5 text-indigo-500" />
+            Site Updates
+          </h3>
+          <button 
+            onClick={() => navigate('/home/feed')}
+            className="text-sm font-bold text-indigo-500 flex items-center gap-1 hover:text-indigo-600 transition-colors group"
+          >
+            View All <span className="group-hover:translate-x-1 transition-transform">→</span>
+          </button>
+        </div>
+        <div className="space-y-3">
           {recentFeeds.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
-              <p className="text-sm">No recent updates. Share the first update!</p>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center border border-slate-100/50 shadow-lg">
+              <p className="text-gray-500 text-sm mb-2">No updates found</p>
+              <button
+                onClick={() => navigate('/home/feed')}
+                className="text-gray-800 text-sm font-medium hover:underline"
+              >
+                Share the first update
+              </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {recentFeeds.map((feed) => (
-                <div
+            recentFeeds.map((feed, index) => {
+              const feedImage = getFeedImage(feed);
+              const timeStr = formatTime(feed.timestamp);
+              const isToday = new Date(feed.timestamp).toDateString() === new Date().toDateString();
+              const displayTime = isToday ? timeStr.split(',')[1]?.trim() || timeStr : getRelativeTime(feed.timestamp);
+              
+              return (
+                <div 
                   key={feed.id}
-                  className="bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer"
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-slate-100/50 flex items-center gap-4 cursor-pointer group"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-16 h-16 flex-shrink-0 ${getBgForFeed(feed)} rounded-2xl flex items-center justify-center text-2xl`}>
-                      {getIconForFeed(feed)}
+                  {feedImage ? (
+                    <div className="relative overflow-hidden rounded-xl">
+                      <img 
+                        alt={feed.title || feed.content} 
+                        className="w-14 h-14 rounded-xl object-cover transform group-hover:scale-110 transition-transform duration-300" 
+                        src={feedImage}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
-                    <div className="flex-1  min-w-0">
-                      <h4 className="font-medium text-base text-slate-900 mb-1 line-clamp-1 flex justify-start">
-                        {feed.title || feed.content}
-                      </h4>
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <span className="truncate">{feed.user.name}</span>
-                        <span>•</span>
-                        <span className="flex-shrink-0">
-                          {getRelativeTime(feed.timestamp)}
-                        </span>
-                      </div>
+                  ) : (
+                    <div className="w-14 h-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center shadow-inner">
+                      <FileText className="w-6 h-6 text-slate-400" />
                     </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                      {feed.title || feed.content}
+                    </h4>
+                    <p className="text-sm text-slate-500">
+                      Uploaded by <span className="font-semibold text-slate-600">{feed.user.name} ({feed.user.role})</span>
+                    </p>
+                    <p className="text-xs text-slate-400 font-medium">
+                      {isToday ? `Today, ${displayTime}` : displayTime}
+                    </p>
                   </div>
+                  <ChevronDown className="w-5 h-5 text-slate-300 -rotate-90 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
                 </div>
-              ))}
-            </div>
+              );
+            })
           )}
         </div>
-    </>
+      </div>
+    </div>
   );
 };
 

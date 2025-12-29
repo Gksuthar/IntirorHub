@@ -3,7 +3,6 @@ import {
   Download,
   CheckCircle2,
   Clock,
-  AlertCircle,
   Send,
   Plus,
   X,
@@ -140,27 +139,6 @@ const Payments: React.FC = () => {
     paymentApi.downloadInvoice(paymentId, token);
   };
 
-  const getStatusColor = (status: PaymentDto["status"]) => {
-    switch (status) {
-      case "paid":
-        return "inline-flex items-center bg-emerald-50 text-emerald-700 p-1 rounded-lg text-xs font-medium mt-1";
-      case "due":
-        return "inline-flex items-center bg-amber-50 text-amber-700 p-1 rounded-lg text-xs font-medium mt-1";
-      case "overdue":
-        return "inline-flex items-center px-2 py-1 bg-red-50 text-red-700 rounded-lg text-xs font-medium mt-1";
-    }
-  };
-
-  const getStatusIcon = (status: PaymentDto["status"]) => {
-    switch (status) {
-      case "paid":
-        return <CheckCircle2 className="h-4 w-4" />;
-      case "due":
-        return <Clock className="h-4 w-4" />;
-      case "overdue":
-        return <AlertCircle className="h-4 w-4" />;
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return `₹${amount.toLocaleString("en-IN")}`;
@@ -229,7 +207,6 @@ const Payments: React.FC = () => {
   const pendingAmount = Math.max(0, contractValue - receivedAmount);
   const rawPercent = contractValue > 0 ? Math.round((receivedAmount / contractValue) * 100) : 0;
   const progressPercentage = Math.min(100, Math.max(0, rawPercent));
-  const overdueCount = payments.filter((p) => p.status === "overdue").length;
 
   return (
 <div className="min-h-screen pt-20 p-2 md:px-6">
@@ -260,37 +237,36 @@ const Payments: React.FC = () => {
         )}
 
         {/* Contract Value and Received */}
-        <div className="grid grid-cols-2 gap-3 mb-6 bg-white p-5 shadow-sm border border-gray-200 rounded-2xl">
-          <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-            <p className="text-xs text-gray-500 mb-1">Contract Value</p>
-            <p className="text-md font-bold text-gray-900">{formatCurrency(contractValue)}</p>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-4 text-center shadow-inner">
+            <p className="text-[10px] font-bold tracking-wider text-slate-400 mb-2">CONTRACT VALUE</p>
+            <p className="text-xl font-bold text-slate-800">{formatCurrency(contractValue)}</p>
           </div>
-          <div className="bg-green-50 rounded-2xl p-4 border border-green-200">
-            <p className="text-xs text-green-700 mb-1">Received</p>
-            <p className="text-xl font-bold text-green-700">{formatCurrency(receivedAmount)}</p>
+          <div className="bg-blue-50 rounded-2xl p-4 text-center">
+            <p className="text-[10px] font-semibold tracking-wider text-blue-500 mb-2">RECEIVED</p>
+            <p className="text-xl font-bold text-blue-600">{formatCurrency(receivedAmount)}</p>
           </div>
         </div>
 
         {/* Payment Progress */}
-        <div className="mb-6 bg-white p-5 shadow-sm border border-gray-200 rounded-2xl">
-          <div className="flex justify-between items-center mb-2">
-            <p className="text-sm font-semibold text-gray-900">Payment Progress</p>
-            <p className="text-sm font-semibold text-gray-900">{progressPercentage}%</p>
+        <div className="bg-white rounded-3xl p-5 mb-6 shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-semibold text-slate-700">Payment Progress</span>
+            <span className="text-lg font-bold text-slate-800">{progressPercentage}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+          <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mb-3">
             <div
-              className="bg-green-500 h-2 rounded-full transition-all"
+              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-500 text-center">
             {formatCurrency(pendingAmount)} pending
-            {overdueCount > 0 && ` • ${overdueCount} overdue`}
           </p>
         </div>
 
         {/* Stage-wise Payments Title */}
-        <h3 className="flex justify-start text-md font-semibold text-gray-600 mb-2 ml-2">Stage-wise Payments</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-4">Stage-wise Payments</h3>
 
         {/* Loading State */}
         {loading && (
@@ -327,42 +303,42 @@ const Payments: React.FC = () => {
           {payments.map((payment) => (
             <div
               key={payment._id}
-              className="  bg-white border border-gray-200 rounded-2xl p-5 shadow-sm"
+              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100"
             >
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h4 className="text-md font-semibold font-md text-gray-600">{payment.title}</h4>
-                  <p className="text-sm text-gray-500">{contractValue > 0 ? Math.round((payment.amount / contractValue) * 100) : 0}% of total</p>
-                  <p className="text-sm text-gray-500 mb-3">
-                    <br/>
-                    <br/>
+                  <h4 className="font-bold text-slate-800">{payment.title}</h4>
+                  <p className="text-sm text-slate-400">{contractValue > 0 ? Math.round((payment.amount / contractValue) * 100) : 0}% of total</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-slate-800">{formatCurrency(payment.amount)}</p>
+                  {payment.status === "paid" ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-full">
+                      <CheckCircle2 className="w-3 h-3" />
+                      PAID
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-1 rounded-full">
+                      <Clock className="w-3 h-3" />
+                      DUE
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-sm text-slate-500 mb-4">
                 Due: {new Date(payment.dueDate).toLocaleDateString("en-IN", {
                   day: "2-digit",
                   month: "short",
                   year: "numeric",
                 })}
               </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-md font-semibold text-gray-900">{formatCurrency(payment.amount)}</p>
-                  <div
-                    className={`inline-flex items-center gap-1 text-sm font-semibold ${getStatusColor(
-                      payment.status
-                    )}`}
-                  >
-                    {getStatusIcon(payment.status)}
-                    <span className="capitalize">{payment.status}</span>
-                  </div>
-                </div>
-              </div>
 
-             
               {payment.status === "paid" ? (
                 <button
                   onClick={() => handleDownloadInvoice(payment._id)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm border border-gray-200 hover:bg-gray-100 transition-colors"
+                  className="w-full bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-600 hover:shadow-lg hover:shadow-emerald-200 transition-all"
                 >
-                  <Download className="h-4 w-4" />
+                  <Download className="w-5 h-5" />
                   Download Invoice
                 </button>
               ) : (
@@ -370,9 +346,9 @@ const Payments: React.FC = () => {
                   {isAdmin && (
                     <button
                       onClick={() => handleMarkPaid(payment._id)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-xs transition-colors"
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-blue-200 transition-all"
                     >
-                      <CheckCircle2 className="h-4 w-4" />
+                      <CheckCircle2 className="w-5 h-5" />
                       Mark Paid
                     </button>
                   )}
@@ -382,12 +358,12 @@ const Payments: React.FC = () => {
                       disabled={remindingPaymentId === payment._id}
                       className={`${
                         isAdmin ? "flex-1" : "w-full"
-                      } flex items-center justify-center gap-2 px-4 py-3.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium text-xs border border-gray-300 transition-colors ${remindingPaymentId === payment._id ? 'opacity-70 cursor-wait' : ''}`}
+                      } bg-white border-2 border-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all ${remindingPaymentId === payment._id ? 'opacity-70 cursor-wait' : ''}`}
                     >
                       {remindingPaymentId === payment._id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
-                        <Send className="h-4 w-4" />
+                        <Send className="w-5 h-5" />
                       )}
                       {remindingPaymentId === payment._id ? 'Sending...' : 'Remind'}
                     </button>
@@ -395,9 +371,9 @@ const Payments: React.FC = () => {
                   {!canManagePayments && (
                     <button
                       onClick={() => handleDownloadInvoice(payment._id)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm border border-gray-200 hover:bg-gray-100 transition-colors"
+                      className="w-full bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-600 hover:shadow-lg hover:shadow-emerald-200 transition-all"
                     >
-                      <Download className="h-4 w-4" />
+                      <Download className="w-5 h-5" />
                       Download Invoice
                     </button>
                   )}

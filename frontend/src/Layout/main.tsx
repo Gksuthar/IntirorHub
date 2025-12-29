@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 const adminPhone = import.meta.env.VITE_ADMIN_PHONE || "8320354644";
 import Header from "../component/Header/Header";
 import { Outlet } from "react-router-dom";
-import { Home, CreditCard, FileText, TrendingUp, Rss, Plus } from "lucide-react";
+import { Home, CreditCard, FileText, TrendingUp, Rss, Plus, UserPlus } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -13,14 +13,14 @@ const MainLayout = () => {
     
     const navLinks = [
         { path: "/", icon: Home, label: "Home" },
-        { path: "/home/payments", icon: CreditCard, label: "Payments" },
+        { path: "/home/payments", icon: CreditCard, label: "Pay" },
         { path: "/home/boq", icon: FileText, label: "BOQ" },
         { path: "/home/expenses", icon: TrendingUp, label: "Expenses" },
         { path: "/home/feed", icon: Rss, label: "Feed" },
     ];
 
     const isActive = (path: string) => {
-        if (path === "/") return location.pathname === "/";
+        if (path === "/") return location.pathname === "/" || location.pathname === "/home";
         return location.pathname.startsWith(path);
     };
 
@@ -109,9 +109,11 @@ const MainLayout = () => {
     return (
         <>
             <Header />
-            <div className="pb-32">
+            <div className="pb-32 pt-44 lg:pt-32 lg:pb-24">
                 <div className={showPaymentModal ? 'pointer-events-none select-none filter blur-sm' : ''}>
-                    <Outlet />
+                    <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+                        <Outlet />
+                    </div>
                 </div>
                 {/* Global payment-due modal for logged-in users */}
                 {showPaymentModal && (
@@ -161,27 +163,104 @@ const MainLayout = () => {
                             </button>
                         )}
             
+            {/* Desktop Footer Navigation */}
+            <nav className="hidden lg:flex fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+                <div className="w-full px-4 md:px-8 py-4">
+                    <div className="flex items-center justify-center gap-2">
+                        <Link
+                            to="/"
+                            className={`nav-link no-underline ${
+                                isActive("/") ? "nav-link-active" : "nav-link-inactive"
+                            }`}
+                        >
+                            <Home className="h-4 w-4" />
+                            <span>Home</span>
+                        </Link>
+                        <Link
+                            to="/home/payments"
+                            className={`nav-link no-underline ${
+                                isActive("/home/payments") ? "nav-link-active" : "nav-link-inactive"
+                            }`}
+                        >
+                            <CreditCard className="h-4 w-4" />
+                            <span>Payments</span>
+                        </Link>
+                        <Link
+                            to="/home/boq"
+                            className={`nav-link no-underline ${
+                                isActive("/home/boq") ? "nav-link-active" : "nav-link-inactive"
+                            }`}
+                        >
+                            <FileText className="h-4 w-4" />
+                            <span>BOQ</span>
+                        </Link>
+                        <Link
+                            to="/home/expenses"
+                            className={`nav-link no-underline ${
+                                isActive("/home/expenses") ? "nav-link-active" : "nav-link-inactive"
+                            }`}
+                        >
+                            <TrendingUp className="h-4 w-4" />
+                            <span>Expenses</span>
+                        </Link>
+                        <Link
+                            to="/home/feed"
+                            className={`nav-link no-underline ${
+                                isActive("/home/feed") ? "nav-link-active" : "nav-link-inactive"
+                            }`}
+                        >
+                            <Rss className="h-4 w-4" />
+                            <span>Feed</span>
+                        </Link>
+                        {isAdmin && (
+                            <Link
+                                to="/home/invite"
+                                className={`nav-link no-underline ${
+                                    isActive("/home/invite") ? "nav-link-active" : "nav-link-inactive"
+                                }`}
+                            >
+                                <UserPlus className="h-4 w-4" />
+                                <span>Invite</span>
+                            </Link>
+                        )}
+                    </div>
+                </div>
+            </nav>
+
             {/* Mobile Bottom Navigation */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50">
-                <div className="flex items-center justify-around max-w-md mx-auto">
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white z-50">
+                <div className="flex items-center justify-around max-w-md mx-auto px-4 py-3">
                     {navLinks.map((link) => {
                         const Icon = link.icon;
+                        const active = isActive(link.path);
                         return (
                             <Link
                                 key={link.path}
                                 to={link.path}
-                                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all no-underline ${
-                                    isActive(link.path)
-                                        ? "text-gray-900"
+                                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all no-underline relative ${
+                                    active
+                                        ? "text-white"
                                         : "text-gray-400"
                                 }`}
                             >
-                                <Icon className={`h-6 w-6 ${isActive(link.path) ? "text-gray-900" : "text-gray-400"}`} />
-                                <span className="text-xs font-medium">{link.label}</span>
+                                {active ? (
+                                    <>
+                                        <div className="rounded-xl px-4 py-2.5 flex flex-row items-center gap-2" style={{ backgroundColor: '#334155' }}>
+                                            <Icon className="h-5 w-5 text-white" />
+                                            <span className="text-sm font-bold text-white whitespace-nowrap">{link.label}</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <Icon className="h-6 w-6 text-gray-400" />
+                                )}
                             </Link>
                         );
                     })}
                 </div>
+                {/* Thin Banner Bar */}
+                {/* <div className="bg-gray-900 text-white text-center py-1">
+                    <span className="text-xs font-medium">SITEZERO Management</span>
+                </div> */}
             </nav>
         </>
     );

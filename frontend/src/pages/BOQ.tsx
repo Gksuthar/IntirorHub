@@ -3,10 +3,11 @@ import {
   Plus,
   Download,
   Share2,
-  Edit2,
-  Trash2,
-  MessageSquare,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 interface BOQItem {
   id: number;
@@ -27,14 +28,17 @@ interface Room {
 }
 
 const BOQ: React.FC = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const [selectedCategory, setSelectedCategory] = useState<"furniture" | "services" | "all">("all");
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
-
-  const rooms: Room[] = [
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+  const [editedRoomName, setEditedRoomName] = useState<string>("");
+  const [rooms, setRooms] = useState<Room[]>([
     {
       id: "living-room",
       name: "Living Room",
-      subtotal: 134450,
+      subtotal: 112700,
       items: [
         {
           id: 1,
@@ -44,7 +48,6 @@ const BOQ: React.FC = () => {
           rate: 45000,
           amount: 45000,
           category: "furniture",
-          comments: 1,
         },
         {
           id: 2,
@@ -60,17 +63,17 @@ const BOQ: React.FC = () => {
           name: "TV Unit",
           quantity: 1,
           unit: "Nos.",
-          rate: 22000,
-          amount: 22000,
+          rate: 25000,
+          amount: 25000,
           category: "furniture",
         },
         {
           id: 4,
           name: "Wall Paint",
-          quantity: 450,
+          quantity: 280,
           unit: "Sq. Ft.",
-          rate: 35,
-          amount: 15750,
+          rate: 45,
+          amount: 12600,
           category: "services",
         },
         {
@@ -82,21 +85,12 @@ const BOQ: React.FC = () => {
           amount: 21600,
           category: "services",
         },
-        {
-          id: 6,
-          name: "Accent Wall Paneling",
-          quantity: 120,
-          unit: "Sq. Ft.",
-          rate: 180,
-          amount: 21600,
-          category: "services",
-        },
       ],
     },
     {
       id: "kitchen",
       name: "Kitchen",
-      subtotal: 144550,
+      subtotal: 146350,
       items: [
         {
           id: 7,
@@ -139,8 +133,8 @@ const BOQ: React.FC = () => {
           name: "Wall Paint",
           quantity: 180,
           unit: "Sq. Ft.",
-          rate: 35,
-          amount: 6300,
+          rate: 45,
+          amount: 8100,
           category: "services",
         },
       ],
@@ -148,7 +142,7 @@ const BOQ: React.FC = () => {
     {
       id: "bedroom-1",
       name: "Bedroom 1",
-      subtotal: 196200,
+      subtotal: 200000,
       items: [
         {
           id: 12,
@@ -182,8 +176,8 @@ const BOQ: React.FC = () => {
           name: "Wall Paint",
           quantity: 380,
           unit: "Sq. Ft.",
-          rate: 35,
-          amount: 13300,
+          rate: 45,
+          amount: 17100,
           category: "services",
         },
         {
@@ -209,7 +203,7 @@ const BOQ: React.FC = () => {
     {
       id: "bedroom-2",
       name: "Bedroom 2",
-      subtotal: 151350,
+      subtotal: 124800,
       items: [
         {
           id: 18,
@@ -223,19 +217,10 @@ const BOQ: React.FC = () => {
         {
           id: 19,
           name: "Wardrobe",
-          quantity: 90,
+          quantity: 80,
           unit: "Sq. Ft.",
           rate: 850,
-          amount: 76500,
-          category: "furniture",
-        },
-        {
-          id: 20,
-          name: "Side Table",
-          quantity: 2,
-          unit: "Nos.",
-          rate: 3500,
-          amount: 7000,
+          amount: 68000,
           category: "furniture",
         },
         {
@@ -243,8 +228,8 @@ const BOQ: React.FC = () => {
           name: "Wall Paint",
           quantity: 320,
           unit: "Sq. Ft.",
-          rate: 35,
-          amount: 11200,
+          rate: 45,
+          amount: 14400,
           category: "services",
         },
         {
@@ -256,38 +241,20 @@ const BOQ: React.FC = () => {
           amount: 14400,
           category: "services",
         },
-        {
-          id: 23,
-          name: "Flooring (Laminate)",
-          quantity: 150,
-          unit: "Sq. Ft.",
-          rate: 95,
-          amount: 14250,
-          category: "services",
-        },
       ],
     },
     {
       id: "bedroom-3",
       name: "Bedroom 3",
-      subtotal: 146250,
+      subtotal: 50600,
       items: [
         {
           id: 24,
           name: "Single Bed",
           quantity: 2,
           unit: "Nos.",
-          rate: 18000,
-          amount: 36000,
-          category: "furniture",
-        },
-        {
-          id: 25,
-          name: "Wardrobe",
-          quantity: 75,
-          unit: "Sq. Ft.",
-          rate: 850,
-          amount: 63750,
+          rate: 15000,
+          amount: 30000,
           category: "furniture",
         },
         {
@@ -295,42 +262,46 @@ const BOQ: React.FC = () => {
           name: "Study Desk",
           quantity: 1,
           unit: "Nos.",
-          rate: 9500,
-          amount: 9500,
+          rate: 8000,
+          amount: 8000,
           category: "furniture",
         },
         {
           id: 27,
           name: "Wall Paint",
-          quantity: 300,
+          quantity: 280,
           unit: "Sq. Ft.",
-          rate: 35,
-          amount: 10500,
-          category: "services",
-        },
-        {
-          id: 28,
-          name: "False Ceiling",
-          quantity: 110,
-          unit: "Sq. Ft.",
-          rate: 120,
-          amount: 13200,
-          category: "services",
-        },
-        {
-          id: 29,
-          name: "Flooring (Laminate)",
-          quantity: 140,
-          unit: "Sq. Ft.",
-          rate: 95,
-          amount: 13300,
+          rate: 45,
+          amount: 12600,
           category: "services",
         },
       ],
     },
-  ];
+  ]);
 
-  const totalProjectCost = rooms.reduce((sum, room) => sum + room.subtotal, 0);
+  const handleEditRoomName = (roomId: string, currentName: string) => {
+    setEditingRoomId(roomId);
+    setEditedRoomName(currentName);
+  };
+
+  const handleSaveRoomName = (roomId: string) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId ? { ...room, name: editedRoomName } : room
+    ));
+    setEditingRoomId(null);
+    setEditedRoomName("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRoomId(null);
+    setEditedRoomName("");
+  };
+
+  const handleAddUnit = (roomId: string) => {
+    // This will trigger the Add Item functionality
+    // For now, we can show an alert or trigger the Add Item button
+    console.log("Add unit for room:", roomId);
+  };
 
   const filteredRooms = selectedRoom === "all" 
     ? rooms 
@@ -341,215 +312,202 @@ const BOQ: React.FC = () => {
     return items.filter(item => item.category === selectedCategory);
   };
 
+  const formatCurrency = (amount: number) => {
+    return `₹${amount.toLocaleString("en-IN")}`;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50/40 pt-20 pb-12 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Bill of Quantities</h1>
-          <p className="text-slate-500">Comprehensive cost breakdown and project estimation</p>
-        </div>
+    <div className="pb-20">
+      {/* Header */}
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Bill of Quantities</h2>
+        <p className="text-slate-500 text-sm">Comprehensive cost breakdown and project estimation</p>
+      </div>
 
-        {/* Category Filters */}
-        <div className="flex gap-3 mb-6">
+      {/* Category Filters */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+        <button
+          onClick={() => setSelectedCategory("all")}
+          className={`px-5 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${
+            selectedCategory === "all"
+              ? "bg-slate-800 text-white shadow-lg"
+              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          All Items
+        </button>
+        <button
+          onClick={() => setSelectedCategory("furniture")}
+          className={`px-5 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${
+            selectedCategory === "furniture"
+              ? "bg-slate-800 text-white shadow-lg"
+              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          Furniture
+        </button>
+        <button
+          onClick={() => setSelectedCategory("services")}
+          className={`px-5 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${
+            selectedCategory === "services"
+              ? "bg-slate-800 text-white shadow-lg"
+              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          Services
+        </button>
+      </div>
+
+      {/* Room Filters */}
+      <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm border border-slate-100">
+        <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setSelectedCategory("all")}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedCategory === "all"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "bg-white text-slate-600 hover:bg-slate-50"
+            onClick={() => setSelectedRoom("all")}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              selectedRoom === "all"
+                ? "bg-blue-50 text-blue-600 border-2 border-blue-200"
+                : "bg-slate-50 text-slate-600 hover:bg-slate-100"
             }`}
           >
-            All Items
+            All Rooms
           </button>
-          <button
-            onClick={() => setSelectedCategory("furniture")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedCategory === "furniture"
-                ? "bg-indigo-600 text-white"
-                : "bg-white text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-current"></span>
-            Furniture
-          </button>
-          <button
-            onClick={() => setSelectedCategory("services")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedCategory === "services"
-                ? "bg-orange-500 text-white"
-                : "bg-white text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-current"></span>
-            Services
-          </button>
-        </div>
-
-        {/* Room Tabs */}
-        <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {rooms.map((room) => (
             <button
-              onClick={() => setSelectedRoom("all")}
-              className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                selectedRoom === "all"
-                  ? "bg-indigo-50 text-indigo-600 border-2 border-indigo-200"
-                  : "bg-white text-slate-600 border-2 border-slate-200 hover:border-slate-300"
+              key={room.id}
+              onClick={() => setSelectedRoom(room.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                selectedRoom === room.id
+                  ? "bg-blue-50 text-blue-600 border-2 border-blue-200"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
               }`}
             >
-              All Rooms
+              {room.name}
             </button>
-            {rooms.map((room) => (
-              <button
-                key={room.id}
-                onClick={() => setSelectedRoom(room.id)}
-                className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  selectedRoom === room.id
-                    ? "bg-indigo-50 text-indigo-600 border-2 border-indigo-200"
-                    : "bg-white text-slate-600 border-2 border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                {room.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Room Sections */}
-        <div className="space-y-6">
-          {filteredRooms.map((room) => {
-            const filteredItems = filterItemsByCategory(room.items);
-            if (filteredItems.length === 0) return null;
-
-            const roomSubtotal = filteredItems.reduce((sum, item) => sum + item.amount, 0);
-
-            return (
-              <div key={room.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                {/* Room Header */}
-                <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                  <h2 className="text-xl font-semibold text-slate-900">{room.name}</h2>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
-                    <Plus className="h-4 w-4" />
-                    Add Item
-                  </button>
-                </div>
-
-                {/* Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-slate-100">
-                        <th className="text-left py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Item Name
-                        </th>
-                        <th className="text-center py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Quantity
-                        </th>
-                        <th className="text-center py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Rate
-                        </th>
-                        <th className="text-center py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="text-center py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredItems.map((item) => (
-                        <tr
-                          key={item.id}
-                          className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
-                        >
-                          <td className="py-4 px-6">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`w-1 h-10 rounded-full ${
-                                  item.category === "furniture" ? "bg-indigo-600" : "bg-orange-500"
-                                }`}
-                              ></div>
-                              <div>
-                                <p className="font-medium text-slate-900">{item.name}</p>
-                                {item.comments && (
-                                  <p className="text-xs text-indigo-600 flex items-center gap-1 mt-1">
-                                    <MessageSquare className="h-3 w-3" />
-                                    {item.comments} comment
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6 text-center text-slate-700">
-                            {item.quantity} {item.unit}
-                          </td>
-                          <td className="py-4 px-6 text-center text-slate-700">
-                            ₹{item.rate.toLocaleString("en-IN")}
-                          </td>
-                          <td className="py-4 px-6 text-center font-semibold text-slate-900">
-                            ₹{item.amount.toLocaleString("en-IN")}
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center justify-center gap-2">
-                              <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                                <Edit2 className="h-4 w-4 text-slate-600" />
-                              </button>
-                              <button className="p-2 hover:bg-red-50 rounded-lg transition-colors">
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Subtotal Section */}
-                <div className="bg-slate-50 px-6 py-4 flex items-center justify-between border-t border-slate-100">
-                  <span className="text-sm font-medium text-slate-700">Subtotal</span>
-                  <span className="text-2xl font-bold text-slate-900">
-                    ₹{roomSubtotal.toLocaleString("en-IN")}
-                  </span>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="p-4 flex gap-3">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors font-medium">
-                    <Download className="h-4 w-4" />
-                    Export PDF
-                  </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-900 border-2 border-slate-200 rounded-xl hover:bg-slate-50 transition-colors font-medium">
-                    <Share2 className="h-4 w-4" />
-                    Share BOQ
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Total Project Cost */}
-        <div className="mt-8 bg-slate-900 rounded-2xl p-8 text-white">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <p className="text-slate-300 text-sm uppercase tracking-wider mb-2">
-                Total Project Cost
-              </p>
-              <p className="text-5xl font-bold">₹{totalProjectCost.toLocaleString("en-IN")}</p>
-            </div>
-            <div className="flex gap-3">
-              <button className="px-6 py-3 bg-white text-slate-900 rounded-xl hover:bg-slate-100 transition-colors font-medium">
-                Download Complete BOQ
-              </button>
-              <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium">
-                Share Project
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
+
+      {/* Room Sections */}
+      <div className="space-y-4">
+        {filteredRooms.map((room) => {
+          const filteredItems = filterItemsByCategory(room.items);
+          if (filteredItems.length === 0) return null;
+
+          const roomSubtotal = filteredItems.reduce((sum, item) => sum + item.amount, 0);
+
+          return (
+            <div key={room.id} className="bg-white rounded-3xl p-5 mb-4 shadow-sm border border-slate-100">
+              {/* Room Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  {editingRoomId === room.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editedRoomName}
+                        onChange={(e) => setEditedRoomName(e.target.value)}
+                        className="text-xl font-bold text-slate-800 border-2 border-blue-500 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleSaveRoomName(room.id)}
+                        className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="text-xl font-bold text-slate-800">{room.name}</h3>
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleEditRoomName(room.id, room.name)}
+                          className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit room name"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+                <button className="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-blue-600 transition-colors">
+                  <Plus className="w-4 h-4" />
+                  Add Item
+                </button>
+              </div>
+
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-2 mb-3 px-2">
+                <div className="col-span-5 text-[10px] font-semibold tracking-wider text-slate-400">ITEM NAME</div>
+                <div className="col-span-4 text-[10px] font-semibold tracking-wider text-slate-400 text-center">QUANTITY</div>
+                <div className="col-span-3 text-[10px] font-semibold tracking-wider text-slate-400 text-right">RATE</div>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-3">
+                {filteredItems.map((item) => (
+                  <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-50 last:border-0">
+                    <div className="col-span-5 flex items-center gap-2">
+                      <div className={`w-1 h-10 rounded-full ${
+                        item.category === "furniture" ? "bg-blue-500" : "bg-amber-500"
+                      }`}></div>
+                      <span className="font-semibold text-slate-800">{item.name}</span>
+                    </div>
+                    <div className="col-span-4 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="font-semibold text-slate-700">{item.quantity} {item.unit}</span>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleAddUnit(room.id)}
+                            className="p-0.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                            title="Add unit"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-400">Qty</p>
+                    </div>
+                    <div className="col-span-3 text-right">
+                      <span className="font-bold text-slate-800">{formatCurrency(item.rate)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Subtotal */}
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+                <span className="text-slate-500 font-medium">Subtotal</span>
+                <span className="text-2xl font-bold text-slate-800">{formatCurrency(roomSubtotal)}</span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-4">
+                <button className="flex-1 bg-slate-800 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-700 transition-all">
+                  <Download className="w-5 h-5" />
+                  Export PDF
+                </button>
+                <button className="flex-1 bg-white border-2 border-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all">
+                  <Share2 className="w-5 h-5" />
+                  Share BOQ
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Floating Action Button */}
+      <button className="fixed bottom-24 right-6 w-14 h-14 bg-slate-800 text-white rounded-full shadow-lg shadow-slate-300 flex items-center justify-center hover:bg-slate-700 transition-all hover:scale-105 z-40">
+        <Plus className="w-6 h-6" />
+      </button>
     </div>
   );
 };

@@ -7,15 +7,11 @@ import {
   FileText,
   TrendingUp,
   Rss,
-  Menu,
-  X,
   LogOut,
   User,
-  Search,
   Sparkles,
   UserPlus,
   ChevronDown,
-  Users,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -101,173 +97,51 @@ const Header: React.FC = () => {
 
   const activeSiteName = activeSite?.name ?? "Select a site";
 
+  // Get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "GOOD MORNING";
+    if (hour < 17) return "GOOD AFTERNOON";
+    return "GOOD EVENING";
+  };
+
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled 
-          ? "bg-white/80 backdrop-blur-xl shadow-lg shadow-gray-200/50" 
-          : "bg-white/60 backdrop-blur-lg"
+          ? "bg-gradient-to-b from-blue-50 to-white shadow-lg shadow-gray-200/50" 
+          : "bg-gradient-to-b from-blue-50 to-white"
       }`}
     >
       <div className="px-4 md:px-8 py-3">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/home" className="flex items-center gap-3 no-underline group">
-            <div className="relative">
-              <div className="relative bg-[#1a1a1a] p-2.5 rounded-xl">
-                <Building2 className="h-6 w-6 text-white" />
-              </div>
-            </div>
+        {/* First Row - Greeting and Profile Icon */}
+        <div className="flex items-center justify-between gap-4 mb-3">
+          {/* Left Section - Greeting and Name */}
+          <div className="flex items-center gap-3">
+            <Sparkles className="h-5 w-5 text-[#FBBF24]" />
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-[#1a1a1a] tracking-tight">
-                SiteZero
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                {getGreeting()}
               </span>
-              <span className="text-[10px] text-gray-400 font-medium -mt-1">
-                SITEZERO Management
+              <span className="text-lg font-bold text-gray-800">
+                {displayName}
               </span>
             </div>
-          </Link>
+          </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-2 bg-gray-100/80 rounded-2xl p-1.5">
-            {visibleNavLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`nav-link no-underline ${
-                    isActive(link.path) ? "nav-link-active" : "nav-link-inactive"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Right Section */}
-          <div className="flex items-center gap-2 md:gap-4">
-            {/* Active Site Dropdown */}
-            <div className="relative" ref={siteMenuRef}>
-              <button
-                type="button"
-                onClick={() => setIsSiteMenuOpen((prev) => !prev)}
-                className="flex items-center gap-3 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300"
-              >
-                <div className="text-left">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-                    Active Site
-                  </span>
-                  <span className="block text-sm font-semibold text-gray-800 max-w-[150px] truncate sm:max-w-[180px]">
-                    {activeSiteName}
-                  </span>
-                </div>
-                <ChevronDown
-                  className={`h-4 w-4 text-gray-500 transition-transform ${isSiteMenuOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {isSiteMenuOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl shadow-gray-200/60 border border-gray-100 py-2 z-40">
-                  <div className="px-4 pb-2 border-b border-gray-100">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Select a site</p>
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {activeSiteName}
-                    </p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto py-1">
-                    {sites.length ? (
-                      sites.map((site) => {
-                        const initials = site.name
-                          .split(" ")
-                          .map((part) => part.charAt(0))
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase();
-                        const isActiveSite = activeSite?.id === site.id;
-                        return (
-                          <button
-                            type="button"
-                            key={site.id}
-                            onClick={() => handleSiteSelect(site.id)}
-                            className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ${
-                              isActiveSite ? "bg-gray-100 text-gray-900" : "hover:bg-gray-50 text-gray-700"
-                            }`}
-                          >
-                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-sm font-semibold text-gray-600">
-                              {initials || "?"}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold truncate">{site.name}</p>
-                              {site.description && (
-                                <p className="text-xs text-gray-500 truncate">{site.description}</p>
-                              )}
-                            </div>
-                            {isActiveSite && (
-                              <span className="text-[10px] font-semibold uppercase text-[#1a1a1a]">Active</span>
-                            )}
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <div className="px-4 py-6 text-center text-sm text-gray-500">
-                        No sites available yet.
-                      </div>
-                    )}
-                  </div>
-                  <div className="border-t border-gray-100 pt-1 pb-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsSiteMenuOpen(false);
-                        navigate("/home/manage-sites");
-                      }}
-                      className="flex w-full items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
-                    >
-                      <Building2 className="h-4 w-4 text-gray-500" />
-                      <span>Open Manage Sites</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsSiteMenuOpen(false);
-                        openCreateSite();
-                      }}
-                      className="flex w-full items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
-                    >
-                      <Building2 className="h-4 w-4 text-gray-500" />
-                      <span>Create new site</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Search Button */}
-            <button className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300">
-              <Search className="h-4 w-4 text-gray-400" />
-              <span className="text-sm text-gray-400">Search...</span>
-              <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 bg-white rounded-lg text-[10px] text-gray-400 font-mono shadow-sm">
-                ⌘K
-              </kbd>
+          {/* Right Section - Profile Icon */}
+          <div className="relative">
+            <button
+              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              className="relative group"
+            >
+              <img
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`}
+                alt="User"
+                className="relative h-11 w-11 rounded-full border-2 border-white shadow-lg object-cover"
+              />
+              <span className="absolute top-0 right-0 w-3 h-3 bg-pink-500 rounded-full border-2 border-white"></span>
             </button>
-
-         
-            {/* Profile Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="relative group"
-              >
-                <img
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`}
-                  alt="User"
-                  className="relative h-11 w-11 rounded-full border-2 border-white shadow-lg object-cover"
-                />
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
-              </button>
 
               {isProfileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl shadow-gray-200/50 border border-gray-100 py-2 z-50">
@@ -314,17 +188,17 @@ const Header: React.FC = () => {
                         className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-all no-underline"
                       >
                         <UserPlus className="h-4 w-4" />
-                        <span className="text-sm font-medium">Invite teammates</span>
+                        <span className="text-sm font-medium">Team Members</span>
                       </Link>
                     )}
-                    <Link
-                      to="/home/users"
+                    {/* <Link
+                      to="/home/invite"
                       onClick={() => setIsProfileDropdownOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-all no-underline"
                     >
                       <Users className="h-4 w-4" />
                       <span className="text-sm font-medium">User Listing</span>
-                    </Link>
+                    </Link> */}
                   </div>
                   <hr className="my-2 border-gray-100" />
                   <button
@@ -337,20 +211,103 @@ const Header: React.FC = () => {
                   </button>
                 </div>
               )}
-            </div>
-
-            {/* Mobile Menu Button - Hidden since we use bottom nav */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="hidden p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6 text-gray-600" />
-              ) : (
-                <Menu className="h-6 w-6 text-gray-600" />
-              )}
-            </button>
           </div>
+        </div>
+
+        {/* Second Row - Site Dropdown */}
+        <div className="relative" ref={siteMenuRef}>
+          <button
+            type="button"
+            onClick={() => setIsSiteMenuOpen((prev) => !prev)}
+            className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-white hover:bg-gray-50 rounded-2xl transition-all duration-300 shadow-sm"
+          >
+            <div className="text-left flex-1 min-w-0">
+              <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                PROJECT
+              </span>
+              <span className="block text-sm font-bold text-gray-800 truncate">
+                {activeSiteName}
+              </span>
+            </div>
+            <ChevronDown
+              className={`h-4 w-4 text-gray-500 transition-transform flex-shrink-0 ${isSiteMenuOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {isSiteMenuOpen && (
+            <div className="absolute left-0 right-0 mt-2 w-full bg-white rounded-2xl shadow-2xl shadow-gray-200/60 border border-gray-100 py-2 z-40">
+              <div className="px-4 pb-2 border-b border-gray-100">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Select a site</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {activeSiteName}
+                </p>
+              </div>
+              <div className="max-h-64 overflow-y-auto py-1">
+                {sites.length ? (
+                  sites.map((site) => {
+                    const initials = site.name
+                      .split(" ")
+                      .map((part) => part.charAt(0))
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase();
+                    const isActiveSite = activeSite?.id === site.id;
+                    return (
+                      <button
+                        type="button"
+                        key={site.id}
+                        onClick={() => handleSiteSelect(site.id)}
+                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ${
+                          isActiveSite ? "bg-gray-100 text-gray-900" : "hover:bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-sm font-semibold text-gray-600">
+                          {initials || "?"}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{site.name}</p>
+                          {site.description && (
+                            <p className="text-xs text-gray-500 truncate">{site.description}</p>
+                          )}
+                        </div>
+                        {isActiveSite && (
+                          <span className="text-[10px] font-semibold uppercase text-[#1a1a1a]">Active</span>
+                        )}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="px-4 py-6 text-center text-sm text-gray-500">
+                    No sites available yet.
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-gray-100 pt-1 pb-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSiteMenuOpen(false);
+                    navigate("/home/manage-sites");
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                >
+                  <Building2 className="h-4 w-4 text-gray-500" />
+                  <span>Open Manage Sites</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSiteMenuOpen(false);
+                    openCreateSite();
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                >
+                  <Building2 className="h-4 w-4 text-gray-500" />
+                  <span>Create new site</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
