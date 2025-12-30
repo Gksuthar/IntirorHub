@@ -506,3 +506,47 @@ export const expenseApi = {
     window.open(`${API_BASE_URL}/expenses/${expenseId}/invoice?token=${token}`, '_blank');
   }
 };
+
+export const boqApi = {
+  addBOQItem: (
+    body: {
+      roomName: string;
+      itemName: string;
+      quantity: number | string;
+      unit: string;
+      rate: number | string;
+      totalCost: number;
+      comments?: string;
+      siteId: string;
+      referenceImageBase64?: string;
+      referenceImageFilename?: string;
+    },
+    token: string
+  ) =>
+    request<{
+      message: string;
+      boqItem: any;
+    }>(`/boq/add`, {
+      method: "POST",
+      body,
+      token,
+    }),
+
+  getBOQItemsBySite: (siteId: string, token: string, params?: { status?: string; roomName?: string }) => {
+    let q = '';
+    if (params) {
+      const parts = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+      if (parts.length) q = `?${parts.join('&')}`;
+    }
+    return request<{
+      boqItems: Record<string, any[]>;
+      stats: { total: number; approved: number; pending: number; totalCost: number }
+    }>(`/boq/site/${siteId}${q}`, { method: 'GET', token });
+  },
+
+  updateBOQStatus: (boqId: string, status: 'pending' | 'approved' | 'rejected', token: string) =>
+    request<{ message: string; boqItem: any }>(`/boq/${boqId}/status`, { method: 'PUT', body: { status }, token }),
+
+  deleteBOQItem: (boqId: string, token: string) =>
+    request<{ message: string }>(`/boq/${boqId}`, { method: 'DELETE', token }),
+};

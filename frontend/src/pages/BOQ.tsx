@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   Download,
@@ -7,7 +7,8 @@ import {
   Check,
   X,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useSite } from "../context/SiteContext";
+import { boqApi } from "../services/api";
 
 interface BOQItem {
   id: number;
@@ -28,266 +29,191 @@ interface Room {
 }
 
 const BOQ: React.FC = () => {
-  const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
-  const [selectedCategory, setSelectedCategory] = useState<"furniture" | "services" | "all">("all");
-  const [selectedRoom, setSelectedRoom] = useState<string>("all");
+  const [showAddModal, setShowAddModal] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editedRoomName, setEditedRoomName] = useState<string>("");
-  const [rooms, setRooms] = useState<Room[]>([
-    {
-      id: "living-room",
-      name: "Living Room",
-      subtotal: 112700,
-      items: [
-        {
-          id: 1,
-          name: "L-Shaped Sofa",
-          quantity: 1,
-          unit: "Nos.",
-          rate: 45000,
-          amount: 45000,
-          category: "furniture",
-        },
-        {
-          id: 2,
-          name: "Coffee Table",
-          quantity: 1,
-          unit: "Nos.",
-          rate: 8500,
-          amount: 8500,
-          category: "furniture",
-        },
-        {
-          id: 3,
-          name: "TV Unit",
-          quantity: 1,
-          unit: "Nos.",
-          rate: 25000,
-          amount: 25000,
-          category: "furniture",
-        },
-        {
-          id: 4,
-          name: "Wall Paint",
-          quantity: 280,
-          unit: "Sq. Ft.",
-          rate: 45,
-          amount: 12600,
-          category: "services",
-        },
-        {
-          id: 5,
-          name: "False Ceiling",
-          quantity: 180,
-          unit: "Sq. Ft.",
-          rate: 120,
-          amount: 21600,
-          category: "services",
-        },
-      ],
-    },
-    {
-      id: "kitchen",
-      name: "Kitchen",
-      subtotal: 146350,
-      items: [
-        {
-          id: 7,
-          name: "Modular Kitchen",
-          quantity: 85,
-          unit: "Sq. Ft.",
-          rate: 1200,
-          amount: 102000,
-          category: "furniture",
-        },
-        {
-          id: 8,
-          name: "Chimney",
-          quantity: 1,
-          unit: "Nos.",
-          rate: 18000,
-          amount: 18000,
-          category: "furniture",
-        },
-        {
-          id: 9,
-          name: "Wall Tiles",
-          quantity: 150,
-          unit: "Sq. Ft.",
-          rate: 65,
-          amount: 9750,
-          category: "services",
-        },
-        {
-          id: 10,
-          name: "Floor Tiles",
-          quantity: 100,
-          unit: "Sq. Ft.",
-          rate: 85,
-          amount: 8500,
-          category: "services",
-        },
-        {
-          id: 11,
-          name: "Wall Paint",
-          quantity: 180,
-          unit: "Sq. Ft.",
-          rate: 45,
-          amount: 8100,
-          category: "services",
-        },
-      ],
-    },
-    {
-      id: "bedroom-1",
-      name: "Bedroom 1",
-      subtotal: 200000,
-      items: [
-        {
-          id: 12,
-          name: "King Size Bed",
-          quantity: 1,
-          unit: "Nos.",
-          rate: 35000,
-          amount: 35000,
-          category: "furniture",
-        },
-        {
-          id: 13,
-          name: "Wardrobe",
-          quantity: 120,
-          unit: "Sq. Ft.",
-          rate: 850,
-          amount: 102000,
-          category: "furniture",
-        },
-        {
-          id: 14,
-          name: "Study Table",
-          quantity: 1,
-          unit: "Nos.",
-          rate: 12000,
-          amount: 12000,
-          category: "furniture",
-        },
-        {
-          id: 15,
-          name: "Wall Paint",
-          quantity: 380,
-          unit: "Sq. Ft.",
-          rate: 45,
-          amount: 17100,
-          category: "services",
-        },
-        {
-          id: 16,
-          name: "False Ceiling",
-          quantity: 140,
-          unit: "Sq. Ft.",
-          rate: 120,
-          amount: 16800,
-          category: "services",
-        },
-        {
-          id: 17,
-          name: "Flooring (Laminate)",
-          quantity: 180,
-          unit: "Sq. Ft.",
-          rate: 95,
-          amount: 17100,
-          category: "services",
-        },
-      ],
-    },
-    {
-      id: "bedroom-2",
-      name: "Bedroom 2",
-      subtotal: 124800,
-      items: [
-        {
-          id: 18,
-          name: "Queen Size Bed",
-          quantity: 1,
-          unit: "Nos.",
-          rate: 28000,
-          amount: 28000,
-          category: "furniture",
-        },
-        {
-          id: 19,
-          name: "Wardrobe",
-          quantity: 80,
-          unit: "Sq. Ft.",
-          rate: 850,
-          amount: 68000,
-          category: "furniture",
-        },
-        {
-          id: 21,
-          name: "Wall Paint",
-          quantity: 320,
-          unit: "Sq. Ft.",
-          rate: 45,
-          amount: 14400,
-          category: "services",
-        },
-        {
-          id: 22,
-          name: "False Ceiling",
-          quantity: 120,
-          unit: "Sq. Ft.",
-          rate: 120,
-          amount: 14400,
-          category: "services",
-        },
-      ],
-    },
-    {
-      id: "bedroom-3",
-      name: "Bedroom 3",
-      subtotal: 50600,
-      items: [
-        {
-          id: 24,
-          name: "Single Bed",
-          quantity: 2,
-          unit: "Nos.",
-          rate: 15000,
-          amount: 30000,
-          category: "furniture",
-        },
-        {
-          id: 26,
-          name: "Study Desk",
-          quantity: 1,
-          unit: "Nos.",
-          rate: 8000,
-          amount: 8000,
-          category: "furniture",
-        },
-        {
-          id: 27,
-          name: "Wall Paint",
-          quantity: 280,
-          unit: "Sq. Ft.",
-          rate: 45,
-          amount: 12600,
-          category: "services",
-        },
-      ],
-    },
-  ]);
+  const isAdmin = true; // Set to true or use your own logic for admin check
+  const { activeSite } = useSite();
+  const [selectedCategory, setSelectedCategory] = useState<"furniture" | "services" | "all">("all");
+  const [selectedRoom, setSelectedRoom] = useState<string>("all");
+  const [boqItems, setBoqItems] = useState<any[]>([]);
+  const [showAddRoomModal, setShowAddRoomModal] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [boqForm, setBoqForm] = useState({
+    roomName: '',
+    itemName: '',
+    quantity: '',
+    unit: 'Sq.ft',
+    rate: '',
+    comments: '',
+    referenceImage: null as File | null,
+  });
+  const allRoomNames = useMemo(() => {
+    const roomNames = new Set<string>();
+    boqItems.forEach((item: any) => {
+      roomNames.add(item.roomName);
+    });
+    return Array.from(roomNames);
+  }, [boqItems]);
+
+
+  const rooms = useMemo(() => {
+    const roomMap: { [key: string]: Room } = {};
+    
+    // First, initialize all rooms from allRoomNames
+    allRoomNames.forEach((roomName) => {
+      roomMap[roomName] = {
+        id: roomName.toLowerCase().replace(/\s+/g, '-'),
+        name: roomName,
+        items: [],
+        subtotal: 0,
+      };
+    });
+    
+    // Then add items to the rooms
+    boqItems
+      .filter((item: any) => item.itemName !== 'Room Added') // Exclude dummy room items
+      .forEach((item: any) => {
+        const roomName = item.roomName;
+        if (roomMap[roomName]) {
+          roomMap[roomName].items.push({
+            id: item._id,
+            name: item.itemName,
+            quantity: item.quantity,
+            unit: item.unit,
+            rate: item.rate,
+            amount: item.totalCost,
+            category: 'furniture', // TODO: determine from item or add to backend
+            comments: item.comments,
+          });
+          roomMap[roomName].subtotal += item.totalCost;
+        }
+      });
+    
+    return Object.values(roomMap);
+  }, [boqItems]);
+
+
+
+  useEffect(() => {
+    if (activeSite) {
+      fetchBOQItems();
+    }
+  }, [activeSite]);
+
+  const fetchBOQItems = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token || !activeSite) return;
+    try {
+      const response = await boqApi.getBOQItemsBySite(activeSite.id, token);
+      const { boqItems: items } = response as { boqItems: Record<string, any[]>; stats: any };
+    setBoqItems(Object.values(items).flat());
+    } catch (error) {
+      console.error('Failed to fetch BOQ items', error);
+    }
+  };
+
+  const handleAddRoom = async () => {
+    if (!newRoomName.trim()) return;
+    const token = localStorage.getItem('authToken');
+    if (!token || !activeSite) return;
+    const dummyItem = {
+      roomName: newRoomName,
+      itemName: 'Room Added',
+      quantity: 1,
+      unit: 'Nos',
+      rate: 0,
+      totalCost: 0,
+      comments: '',
+      siteId: activeSite.id,
+    };
+    try {
+      await boqApi.addBOQItem(dummyItem, token);
+      setNewRoomName('');
+      setShowAddRoomModal(false);
+      fetchBOQItems();
+    } catch (error) {
+      console.error('Failed to add room', error);
+    }
+  };
+
+  const handleSubmitBOQItem = async (e: React.FormEvent, keepModalOpen = false) => {
+    e.preventDefault();
+    const token = localStorage.getItem('authToken');
+    if (!token || !activeSite) return;
+
+    const totalCost = parseFloat(boqForm.quantity) * parseFloat(boqForm.rate) || 0;
+
+    const itemData = {
+      roomName: boqForm.roomName,
+      itemName: boqForm.itemName,
+      quantity: parseFloat(boqForm.quantity),
+      unit: boqForm.unit,
+      rate: parseFloat(boqForm.rate),
+      totalCost,
+      comments: boqForm.comments,
+      siteId: activeSite.id,
+    };
+
+    // Handle image upload
+    if (boqForm.referenceImage) {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        const imageData = {
+          ...itemData,
+          referenceImageBase64: base64,
+          referenceImageFilename: boqForm.referenceImage!.name,
+        };
+        try {
+          await boqApi.addBOQItem(imageData, token);
+          if (!keepModalOpen) {
+            setShowAddModal(false);
+          }
+          setBoqForm({
+            roomName: '',
+            itemName: '',
+            quantity: '',
+            unit: 'Sq.ft',
+            rate: '',
+            comments: '',
+            referenceImage: null,
+          });
+          fetchBOQItems();
+        } catch (error) {
+          console.error('Failed to add BOQ item', error);
+        }
+      };
+      reader.readAsDataURL(boqForm.referenceImage);
+    } else {
+      try {
+        await boqApi.addBOQItem(itemData, token);
+        if (!keepModalOpen) {
+          setShowAddModal(false);
+        }
+        setBoqForm({
+          roomName: '',
+          itemName: '',
+          quantity: '',
+          unit: 'Sq.ft',
+          rate: '',
+          comments: '',
+          referenceImage: null,
+        });
+        fetchBOQItems();
+      } catch (error) {
+        console.error('Failed to add BOQ item', error);
+      }
+    }
+  };
 
   const handleEditRoomName = (roomId: string, currentName: string) => {
     setEditingRoomId(roomId);
     setEditedRoomName(currentName);
   };
 
-  const handleSaveRoomName = (roomId: string) => {
-    setRooms(rooms.map(room => 
-      room.id === roomId ? { ...room, name: editedRoomName } : room
-    ));
+  const handleSaveRoomName = () => {
+    // TODO: Implement backend update for room name
     setEditingRoomId(null);
     setEditedRoomName("");
   };
@@ -317,6 +243,7 @@ const BOQ: React.FC = () => {
   };
 
   return (
+    <>
     <div className="pb-20">
       {/* Header */}
       <div className="text-center mb-6">
@@ -358,8 +285,8 @@ const BOQ: React.FC = () => {
         </button>
       </div>
 
-      {/* Room Filters */}
-      <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm border border-slate-100">
+      {/* Room Filters + Add Button */}
+      <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm border border-slate-100 flex items-center justify-between">
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedRoom("all")}
@@ -371,34 +298,198 @@ const BOQ: React.FC = () => {
           >
             All Rooms
           </button>
-          {rooms.map((room) => (
+          {allRoomNames.map((roomName) => (
             <button
-              key={room.id}
-              onClick={() => setSelectedRoom(room.id)}
+              key={roomName}
+              onClick={() => setSelectedRoom(roomName.toLowerCase().replace(/\s+/g, '-'))}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                selectedRoom === room.id
+                selectedRoom === roomName.toLowerCase().replace(/\s+/g, '-')
                   ? "bg-blue-50 text-blue-600 border-2 border-blue-200"
                   : "bg-slate-50 text-slate-600 hover:bg-slate-100"
               }`}
             >
-              {room.name}
+              {roomName}
             </button>
           ))}
         </div>
+        {/* Add Room Button */}
+        <button
+          className="w-12 h-12 bg-slate-800 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-slate-700 transition-all flex-shrink-0"
+          title="Add Room"
+          onClick={() => {
+            console.log('Add Room clicked');
+            setShowAddRoomModal(true);
+          }}
+        >
+          <Plus className="w-7 h-7" />
+        </button>
       </div>
+
+ {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40 transition-opacity duration-300 opacity-100" onClick={() => setShowAddModal(false)} />
+          <div className="relative bg-white rounded-xl w-full max-w-md p-4 sm:p-6 shadow-lg
+        overflow-auto max-h-[calc(100vh-8rem)]
+        transform transition-all duration-300
+        scale-100 translate-y-0 opacity-100
+        animate-modalIn">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex flex-col">
+                <h3 className="text-base font-semibold">Add BOQ Item</h3>
+                <span className="text-xs text-gray-500">Add a new item to the Bill of Quantities</span>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="p-1 rounded-md hover:bg-gray-100"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleSubmitBOQItem} className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600">Room Name *</label>
+                <select 
+                  className="w-full mt-1 p-2 border rounded"
+                  value={boqForm.roomName}
+                  onChange={(e) => setBoqForm({...boqForm, roomName: e.target.value})}
+                  required
+                >
+                  <option value="">Select Room</option>
+                  {allRoomNames.map((roomName) => (
+                    <option key={roomName} value={roomName}>{roomName}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Item Name / Scope of Work *</label>
+                <input 
+                  className="w-full mt-1 p-2 border rounded" 
+                  placeholder="Enter item name or scope of work"
+                  value={boqForm.itemName}
+                  onChange={(e) => setBoqForm({...boqForm, itemName: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Quantity / Size *</label>
+                <input 
+                  className="w-full mt-1 p-2 border rounded" 
+                  placeholder="Enter quantity or size"
+                  type="number"
+                  value={boqForm.quantity}
+                  onChange={(e) => setBoqForm({...boqForm, quantity: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Unit *</label>
+                <select 
+                  className="w-full mt-1 p-2 border rounded"
+                  value={boqForm.unit}
+                  onChange={(e) => setBoqForm({...boqForm, unit: e.target.value})}
+                >
+                  <option>Sq.ft</option>
+                  <option>Rft</option>
+                  <option>Nos</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Rate per Unit (₹) *</label>
+                <input 
+                  type="number" 
+                  className="w-full mt-1 p-2 border rounded" 
+                  placeholder="Enter rate per unit"
+                  value={boqForm.rate}
+                  onChange={(e) => setBoqForm({...boqForm, rate: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Total Cost (₹)</label>
+                <input 
+                  type="text" 
+                  className="w-full mt-1 p-2 border rounded bg-gray-100" 
+                  readOnly 
+                  value={boqForm.quantity && boqForm.rate ? `₹${(parseFloat(boqForm.quantity) * parseFloat(boqForm.rate)).toLocaleString()}` : "Auto Calculated"} 
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Upload Reference Image</label>
+                <input 
+                  type="file" 
+                  className="w-full mt-1 p-2 border rounded"
+                  accept="image/*"
+                  onChange={(e) => setBoqForm({...boqForm, referenceImage: e.target.files?.[0] || null})}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Comments / Notes</label>
+                <textarea 
+                  className="w-full mt-1 p-2 border rounded" 
+                  rows={3} 
+                  placeholder="Add any additional comments or notes"
+                  value={boqForm.comments}
+                  onChange={(e) => setBoqForm({...boqForm, comments: e.target.value})}
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row items-center sm:justify-end gap-2 mt-2">
+                <button type="button" onClick={() => setShowAddModal(false)} className="w-full sm:w-auto px-4 py-2 rounded bg-gray-100">Cancel</button>
+                <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded bg-indigo-600 text-white">Add BOQ Item</button>
+                <button 
+                  type="button" 
+                  onClick={() => handleSubmitBOQItem({ preventDefault: () => {} } as any, true)}
+                  className="w-full sm:w-auto px-4 py-2 rounded bg-white border border-indigo-600 text-indigo-600"
+                >
+                  Save & Add Another
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showAddRoomModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40 transition-opacity duration-300 opacity-100" onClick={() => setShowAddRoomModal(false)} />
+          <div className="relative bg-white rounded-xl w-full max-w-md p-4 sm:p-6 shadow-lg
+        overflow-auto max-h-[calc(100vh-8rem)]
+        transform transition-all duration-300
+        scale-100 translate-y-0 opacity-100">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex flex-col">
+                <h3 className="text-base font-semibold">Add New Room</h3>
+                <span className="text-xs text-gray-500">Add a new room to the Bill of Quantities</span>
+              </div>
+              <button onClick={() => setShowAddRoomModal(false)} className="p-1 rounded-md hover:bg-gray-100"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); handleAddRoom(); }} className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600">Room Name *</label>
+                <input
+                  type="text"
+                  className="w-full mt-1 p-2 border rounded"
+                  placeholder="Enter room name (e.g., Bedroom, Kitchen)"
+                  value={newRoomName}
+                  onChange={(e) => setNewRoomName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row items-center sm:justify-end gap-2 mt-2">
+                <button type="button" onClick={() => setShowAddRoomModal(false)} className="w-full sm:w-auto px-4 py-2 rounded bg-gray-100">Cancel</button>
+                <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded bg-indigo-600 text-white">Add Room</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Room Sections */}
       <div className="space-y-4">
         {filteredRooms.map((room) => {
           const filteredItems = filterItemsByCategory(room.items);
-          if (filteredItems.length === 0) return null;
+          // Show room even if no items
 
           const roomSubtotal = filteredItems.reduce((sum, item) => sum + item.amount, 0);
 
           return (
             <div key={room.id} className="bg-white rounded-3xl p-5 mb-4 shadow-sm border border-slate-100">
               {/* Room Header */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 ">
                 <div className="flex items-center gap-2">
                   {editingRoomId === room.id ? (
                     <div className="flex items-center gap-2">
@@ -406,11 +497,11 @@ const BOQ: React.FC = () => {
                         type="text"
                         value={editedRoomName}
                         onChange={(e) => setEditedRoomName(e.target.value)}
-                        className="text-xl font-bold text-slate-800 border-2 border-blue-500 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="text-md  text-slate-500 border-1 border-gray-200 rounded-lg px-1 py-1 focus:outline-none focus:ring-2 focus:ring-gray-200 w-3/5"
                         autoFocus
                       />
                       <button
-                        onClick={() => handleSaveRoomName(room.id)}
+                        onClick={() => handleSaveRoomName()}
                         className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                       >
                         <Check className="w-4 h-4" />
@@ -437,50 +528,65 @@ const BOQ: React.FC = () => {
                     </>
                   )}
                 </div>
-                <button className="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-blue-600 transition-colors">
+                <button 
+                  onClick={() => {
+                    setBoqForm({...boqForm, roomName: room.name});
+                    setShowAddModal(true);
+                  }}  
+                  className="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-blue-600 transition-colors"
+                >
                   <Plus className="w-4 h-4" />
                   Add Item
                 </button>
               </div>
 
-              {/* Table Header */}
-              <div className="grid grid-cols-12 gap-2 mb-3 px-2">
-                <div className="col-span-5 text-[10px] font-semibold tracking-wider text-slate-400">ITEM NAME</div>
-                <div className="col-span-4 text-[10px] font-semibold tracking-wider text-slate-400 text-center">QUANTITY</div>
-                <div className="col-span-3 text-[10px] font-semibold tracking-wider text-slate-400 text-right">RATE</div>
-              </div>
-
-              {/* Items List */}
-              <div className="space-y-3">
-                {filteredItems.map((item) => (
-                  <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-50 last:border-0">
-                    <div className="col-span-5 flex items-center gap-2">
-                      <div className={`w-1 h-10 rounded-full ${
-                        item.category === "furniture" ? "bg-blue-500" : "bg-amber-500"
-                      }`}></div>
-                      <span className="font-semibold text-slate-800">{item.name}</span>
-                    </div>
-                    <div className="col-span-4 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="font-semibold text-slate-700">{item.quantity} {item.unit}</span>
-                        {isAdmin && (
-                          <button
-                            onClick={() => handleAddUnit(room.id)}
-                            className="p-0.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-                            title="Add unit"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-slate-400">Qty</p>
-                    </div>
-                    <div className="col-span-3 text-right">
-                      <span className="font-bold text-slate-800">{formatCurrency(item.rate)}</span>
-                    </div>
+              {filteredItems.length > 0 ? (
+                <>
+                  {/* Table Header */}
+                  <div className="grid grid-cols-12 gap-2 mb-3 px-2">
+                    <div className="col-span-5 text-[10px] font-semibold tracking-wider text-slate-400">ITEM NAME</div>
+                    <div className="col-span-4 text-[10px] font-semibold tracking-wider text-slate-400 text-center">QUANTITY</div>
+                    <div className="col-span-3 text-[10px] font-semibold tracking-wider text-slate-400 text-right">RATE</div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Items List */}
+                  <div className="space-y-3">
+                    {filteredItems.map((item) => (
+                      <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-50 last:border-0">
+                        <div className="col-span-5 flex items-center gap-2">
+                          <div className={`w-1 h-10 rounded-full ${
+                            item.category === "furniture" ? "bg-blue-500" : "bg-amber-500"
+                          }`}></div>
+                          <span className="font-semibold text-slate-800">{item.name}</span>
+                        </div>
+                        <div className="col-span-4 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="font-semibold text-slate-700">{item.quantity} {item.unit}</span>
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleAddUnit(room.id)}
+                                className="p-0.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                title="Add unit"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-400">Qty</p>
+                        </div>
+                        <div className="col-span-3 text-right">
+                          <span className="font-bold text-slate-800">{formatCurrency(item.rate)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  <p className="text-sm">No items added to this room yet.</p>
+                  <p className="text-xs mt-1">Click "Add Item" to get started.</p>
+                </div>
+              )}
 
               {/* Subtotal */}
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
@@ -504,11 +610,10 @@ const BOQ: React.FC = () => {
         })}
       </div>
 
-      {/* Floating Action Button */}
-      <button className="fixed bottom-24 right-6 w-14 h-14 bg-slate-800 text-white rounded-full shadow-lg shadow-slate-300 flex items-center justify-center hover:bg-slate-700 transition-all hover:scale-105 z-40">
-        <Plus className="w-6 h-6" />
-      </button>
-    </div>
+   
+      </div>
+    </>
+
   );
 };
 

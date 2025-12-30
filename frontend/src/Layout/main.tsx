@@ -10,7 +10,7 @@ const MainLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, refresh } = useAuth();
-    
+
     const navLinks = [
         { path: "/", icon: Home, label: "Home" },
         { path: "/home/payments", icon: CreditCard, label: "Pay" },
@@ -25,6 +25,8 @@ const MainLayout = () => {
     };
 
     const isHomePage = location.pathname === '/' || location.pathname === '/home';
+    const isBOQ = location.pathname === '/home/boq' || location.pathname === '/boq';
+
     const isAdmin = (user?.role ?? '').toString().toUpperCase() === 'ADMIN';
     const isClient = (user?.role ?? '').toString().toUpperCase() === 'CLIENT';
     // Show payment-due modal for any user (including admins) when companyPaymentDue is set
@@ -100,9 +102,9 @@ const MainLayout = () => {
             toast.style.transition = 'opacity 200ms ease, transform 200ms ease';
             container.appendChild(toast);
             requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => { try { container?.removeChild(toast); } catch (e) {} }, 200); }, 3000);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => { try { container?.removeChild(toast); } catch (e) { } }, 200); }, 3000);
         } catch (e) {
-            try { alert(message); } catch (_) {}
+            try { alert(message); } catch (_) { }
         }
     };
 
@@ -123,91 +125,86 @@ const MainLayout = () => {
                             <h3 className="text-lg font-semibold text-slate-800 mb-2">Payment Required</h3>
                             <p className="text-sm text-slate-600 mb-4">Your payment is due. Please contact the administrator.</p>
                             <div className="flex gap-2 justify-center">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        window.open(`https://wa.me/91${adminPhone}`);
-                                                                    }}
-                                                                    className="px-4 py-2 bg-blue-600 text-white rounded"
-                                                                >
-                                                                    Contact Admin
-                                                                </button>
-                                <button onClick={() => { try { const nav = window.location; window.location.href = nav.origin; } catch(e){} }} className="px-4 py-2 bg-gray-100 rounded">Close</button>
+                                <button
+                                    onClick={() => {
+                                        window.open(`https://wa.me/91${adminPhone}`);
+                                    }}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded"
+                                >
+                                    Contact Admin
+                                </button>
+                                <button onClick={() => { try { const nav = window.location; window.location.href = nav.origin; } catch (e) { } }} className="px-4 py-2 bg-gray-100 rounded">Close</button>
                             </div>
                         </div>
                     </div>
                 )}
             </div>
-                        {user && !isHomePage && !isClient && (
-                            <button
-                                                onClick={() => {
-                                                    const p = location.pathname;
-                                                    if (p.startsWith('/home/payments')) {
-                                                        if (isAdmin) navigate('/home/payments?openAdd=1');
-                                                        else showToast('Only admins can add payments');
-                                                    } else if (p.startsWith('/home/expenses')) {
-                                                        navigate('/home/expenses?openAdd=1');
-                                                        // ensure modal opens even if URL doesn't change
-                                                        setTimeout(() => window.dispatchEvent(new Event('open-add-expense')), 150);
-                                                    } else if (p.startsWith('/home/feed')) {
-                                                        navigate('/home/feed?openAdd=1');
-                                                        setTimeout(() => window.dispatchEvent(new Event('open-add-feed')), 150);
-                                                    } else if (p.startsWith('/home/invite')) {
-                                                        navigate('/home/invite?openAdd=1');
-                                                        setTimeout(() => window.dispatchEvent(new Event('open-add-invite')), 150);
-                                                    } else navigate('/home/expenses?openAdd=1');
-                                                }}
-                                title="Add"
-                                className={"fixed bottom-24 right-5 z-50 p-4 bg-gray-800 hover:bg-border border-white text-white rounded-full shadow-xl transition active:scale-95"}
-                            >
-                                <Plus className="h-6 w-6" />
-                            </button>
-                        )}
-            
+            {user && !isHomePage && !isBOQ && !isClient && (
+                <button
+                    onClick={() => {
+                        const p = location.pathname;
+                        if (p.startsWith('/home/payments')) {
+                            if (isAdmin) navigate('/home/payments?openAdd=1');
+                            else showToast('Only admins can add payments');
+                        } else if (p.startsWith('/home/expenses')) {
+                            navigate('/home/expenses?openAdd=1');
+                            // ensure modal opens even if URL doesn't change
+                            setTimeout(() => window.dispatchEvent(new Event('open-add-expense')), 150);
+                        } else if (p.startsWith('/home/feed')) {
+                            navigate('/home/feed?openAdd=1');
+                            setTimeout(() => window.dispatchEvent(new Event('open-add-feed')), 150);
+                        } else if (p.startsWith('/home/invite')) {
+                            navigate('/home/invite?openAdd=1');
+                            setTimeout(() => window.dispatchEvent(new Event('open-add-invite')), 150);
+                        } 
+                    }}
+                    title="Add"
+                    className={"fixed bottom-24 right-5 z-50 p-4 bg-gray-800 hover:bg-border border-white text-white rounded-full shadow-xl transition active:scale-95"}
+                >
+                    <Plus className="h-6 w-6" />
+                </button>
+            )}
+
             {/* Desktop Footer Navigation */}
             <nav className="hidden lg:flex fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
                 <div className="w-full px-4 md:px-8 py-4">
                     <div className="flex items-center justify-center gap-2">
                         <Link
                             to="/"
-                            className={`nav-link no-underline ${
-                                isActive("/") ? "nav-link-active" : "nav-link-inactive"
-                            }`}
+                            className={`nav-link no-underline ${isActive("/") ? "nav-link-active" : "nav-link-inactive"
+                                }`}
                         >
                             <Home className="h-4 w-4" />
                             <span>Home</span>
                         </Link>
                         <Link
                             to="/home/payments"
-                            className={`nav-link no-underline ${
-                                isActive("/home/payments") ? "nav-link-active" : "nav-link-inactive"
-                            }`}
+                            className={`nav-link no-underline ${isActive("/home/payments") ? "nav-link-active" : "nav-link-inactive"
+                                }`}
                         >
                             <CreditCard className="h-4 w-4" />
                             <span>Payments</span>
                         </Link>
                         <Link
                             to="/home/boq"
-                            className={`nav-link no-underline ${
-                                isActive("/home/boq") ? "nav-link-active" : "nav-link-inactive"
-                            }`}
+                            className={`nav-link no-underline ${isActive("/home/boq") ? "nav-link-active" : "nav-link-inactive"
+                                }`}
                         >
                             <FileText className="h-4 w-4" />
                             <span>BOQ</span>
                         </Link>
                         <Link
                             to="/home/expenses"
-                            className={`nav-link no-underline ${
-                                isActive("/home/expenses") ? "nav-link-active" : "nav-link-inactive"
-                            }`}
+                            className={`nav-link no-underline ${isActive("/home/expenses") ? "nav-link-active" : "nav-link-inactive"
+                                }`}
                         >
                             <TrendingUp className="h-4 w-4" />
                             <span>Expenses</span>
                         </Link>
                         <Link
                             to="/home/feed"
-                            className={`nav-link no-underline ${
-                                isActive("/home/feed") ? "nav-link-active" : "nav-link-inactive"
-                            }`}
+                            className={`nav-link no-underline ${isActive("/home/feed") ? "nav-link-active" : "nav-link-inactive"
+                                }`}
                         >
                             <Rss className="h-4 w-4" />
                             <span>Feed</span>
@@ -215,9 +212,8 @@ const MainLayout = () => {
                         {isAdmin && (
                             <Link
                                 to="/home/invite"
-                                className={`nav-link no-underline ${
-                                    isActive("/home/invite") ? "nav-link-active" : "nav-link-inactive"
-                                }`}
+                                className={`nav-link no-underline ${isActive("/home/invite") ? "nav-link-active" : "nav-link-inactive"
+                                    }`}
                             >
                                 <UserPlus className="h-4 w-4" />
                                 <span>Invite</span>
@@ -237,11 +233,10 @@ const MainLayout = () => {
                             <Link
                                 key={link.path}
                                 to={link.path}
-                                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all no-underline relative ${
-                                    active
+                                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all no-underline relative ${active
                                         ? "text-white"
                                         : "text-gray-400"
-                                }`}
+                                    }`}
                             >
                                 {active ? (
                                     <>

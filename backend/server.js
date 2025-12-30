@@ -7,6 +7,7 @@ import siteRouter from "./routes/SiteRoute.js";
 import feedRouter from "./routes/FeedRoute.js";
 import paymentRouter from "./routes/PaymentRoute.js";
 import expenseRouter from "./routes/ExpenseRoute.js";
+import boqRouter from "./routes/BOQRoute.js";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use("/api/sites", siteRouter);
 app.use("/api/feed", feedRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/expenses", expenseRouter);
+app.use("/api/boq", boqRouter);
 
 app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
