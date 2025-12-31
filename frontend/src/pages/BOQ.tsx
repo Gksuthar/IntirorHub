@@ -35,7 +35,7 @@ interface Room {
 
 const BOQ: React.FC = () => {
     // Track which menu is open (by item id)
-    const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     // Close menu on outside click
     useEffect(() => {
@@ -516,6 +516,11 @@ const BOQ: React.FC = () => {
     }
   };
 
+  const handleAddUnit = (roomId: string) => {
+    // This will trigger the Add Item functionality
+    // For now, we can show an alert or trigger the Add Item button
+    console.log("Add unit for room:", roomId);
+  };
 
   const handleApproveItem = async (itemId: string) => {
     const token = localStorage.getItem('authToken');

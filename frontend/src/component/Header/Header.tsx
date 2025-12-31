@@ -69,9 +69,12 @@ const Header: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-    setIsProfileDropdownOpen(false);
-    setIsSiteMenuOpen(false);
+    // Avoid direct setState in effect body to prevent cascading renders
+    Promise.resolve().then(() => {
+      setIsMobileMenuOpen(false);
+      setIsProfileDropdownOpen(false);
+      setIsSiteMenuOpen(false);
+    });
   }, [location.pathname]);
 
   useEffect(() => {
@@ -252,26 +255,52 @@ const Header: React.FC = () => {
                       .slice(0, 2)
                       .toUpperCase();
                     const isActiveSite = activeSite?.id === site.id;
+
+                    // Calculate days left
+                    let daysLeft: number | null = null;
+                    if (site.expectedCompletionDate) {
+                      try {
+                        const now = new Date();
+                        const target = new Date(site.expectedCompletionDate);
+                        const diffMs = target.getTime() - now.getTime();
+                        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                        daysLeft = days >= 0 ? days : 0;
+                      } catch {
+                        // Ignore invalid date parsing
+                      }
+                    }
+
+                    // Hardcoded category for now
+                    const category = "Residential";
+
                     return (
                       <button
                         type="button"
                         key={site.id}
                         onClick={() => handleSiteSelect(site.id)}
-                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 ${
-                          isActiveSite ? "bg-gray-100 text-gray-900" : "hover:bg-gray-50 text-gray-700"
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-all duration-200 rounded-2xl border-l-4 ${
+                          isActiveSite
+                            ? "border-[#3b82f6] shadow-sm"
+                            : "bg-white border-transparent hover:bg-gray-50 text-gray-700"
                         }`}
+                        style={isActiveSite ? {
+                          boxShadow: '0 4px 24px 0 rgba(59,130,246,0.10)',
+                          background: 'linear-gradient(90deg, #f5f6ff 0%, #e0eaff 100%)'
+                        } : {}}
                       >
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-sm font-semibold text-gray-600">
-                          {initials || "?"}
+                        {/* Project icon */}
+                        <span className={`flex h-11 w-11 items-center justify-center rounded-xl text-xl font-semibold ${
+                          isActiveSite ? "bg-[#3b82f6] text-white" : "bg-gray-100 text-gray-500"
+                        }`}>
+                          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M8 8V6a4 4 0 1 1 8 0v2" stroke="currentColor" strokeWidth="1.5"/></svg>
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate">{site.name}</p>
-                          {site.description && (
-                            <p className="text-xs text-gray-500 truncate">{site.description}</p>
-                          )}
+                          <p className={`text-base font-bold truncate ${isActiveSite ? "text-[#2563eb]" : "text-gray-900"}`}>{site.name}</p>
+                          <p className={`text-xs mt-0.5 truncate ${isActiveSite ? "text-[#2563eb] opacity-80" : "text-gray-500"}`}>{category}{typeof daysLeft === "number" ? ` • ${daysLeft} days left` : ""}</p>
                         </div>
+                        {/* Checkmark for active */}
                         {isActiveSite && (
-                          <span className="text-[10px] font-semibold uppercase text-[#1a1a1a]">Active</span>
+                          <span className="ml-2 flex items-center justify-center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="#3b82f6" strokeWidth="2" fill="#f5f6ff"/><path d="M8 12.5l3 3 5-5" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
                         )}
                       </button>
                     );

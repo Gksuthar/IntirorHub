@@ -347,30 +347,25 @@ const Home: React.FC = () => {
       </div>
 
       {/* Total Value Card */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 mb-4 shadow-lg border border-slate-100/50 group">
+      <div className="bg-white rounded-3xl p-6 mb-6 shadow-xl border border-slate-100/80 group flex flex-col" style={{boxShadow: '0 4px 32px 0 rgba(59,130,246,0.10)'}}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl flex items-center justify-center shadow-lg shadow-slate-300/50 group-hover:shadow-xl transition-shadow">
-              <CreditCard className="w-5 h-5 text-white" />
+            <div className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center shadow-lg">
+              <CreditCard className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xs font-bold tracking-wider text-slate-400">TOTAL VALUE</span>
+            <span className="text-xs font-bold tracking-wider text-slate-600">TOTAL VALUE</span>
           </div>
-          <span className="flex items-center gap-1.5 text-emerald-600 text-sm font-bold bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-1.5 rounded-full shadow-sm border border-emerald-100">
-            <TrendingUp className="w-4 h-4 animate-pulse" />
+          <span className="flex items-center gap-1.5 text-emerald-600 text-sm font-bold bg-emerald-50 px-4 py-1.5 rounded-full border border-emerald-100">
             ON TRACK
           </span>
         </div>
-        <p className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-4">
-          {formatCurrency(totalBudget)}
-        </p>
+        <p className="flex justify-start text-4xl font-extrabold text-slate-800 mb-2">{formatCurrency(totalBudget)}</p>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold text-slate-500">Payment Progress</span>
-          <span className="text-sm font-bold text-indigo-600">{paymentProgress}%</span>
+          <span className="text-sm font-semibold text-slate-500 mt-2">Payment Progress</span>
+          <span className="text-sm font-bold text-blue-500">{paymentProgress}%</span>
         </div>
-        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden relative">
-          <div className="h-full bg-gradient-to-r from-indigo-500 via-blue-500 to-cyan-500 rounded-full transition-all duration-1000 relative" style={{ width: `${paymentProgress}%` }}>
-            <div className="absolute inset-0 shimmer"></div>
-          </div>
+        <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden relative mt-1">
+          <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${paymentProgress}%`, background: 'linear-gradient(90deg, #6366f1 0%, #38bdf8 100%)' }}></div>
         </div>
       </div>
 
