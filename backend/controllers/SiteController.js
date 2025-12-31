@@ -8,6 +8,10 @@ const sanitizeSite = (siteDoc) => {
     description: site.description,
     image: site.image,
     contractValue: site.contractValue || 0,
+    clientEmail: site.clientEmail,
+    clientPhone: site.clientPhone,
+    startDate: site.startDate,
+    expectedCompletionDate: site.expectedCompletionDate,
     createdAt: site.createdAt,
   };
 };
@@ -42,7 +46,7 @@ export const listSites = async (req, res) => {
 export const createSite = async (req, res) => {
   try {
 
-    const { name, description, image } = req.body;
+    const { name, description, image, clientEmail, clientPhone, startDate, expectedCompletionDate } = req.body;
     let { contractValue, budget } = req.body;
 
     const parseNumber = (v) => {
@@ -69,9 +73,11 @@ export const createSite = async (req, res) => {
       name: name.trim(),
       description: description?.trim() || undefined,
       image: image || undefined,
-
       contractValue: finalContractValue,
-
+      clientEmail: clientEmail || undefined,
+      clientPhone: clientPhone || undefined,
+      startDate: startDate ? new Date(startDate) : undefined,
+      expectedCompletionDate: expectedCompletionDate ? new Date(expectedCompletionDate) : undefined,
       companyName: req.user.companyName,
       createdBy: req.user._id,
       userId: req.user._id,
@@ -118,7 +124,7 @@ export const updateSite = async (req, res) => {
     }
 
     const { siteId } = req.params;
-    const { name, description, contractValue } = req.body;
+    const { name, description, contractValue, clientEmail, clientPhone, startDate, expectedCompletionDate } = req.body;
 
     const update = {};
     if (typeof name === "string" && name.trim()) update.name = name.trim();
@@ -130,6 +136,10 @@ export const updateSite = async (req, res) => {
       }
       update.contractValue = num;
     }
+    if (clientEmail !== undefined) update.clientEmail = clientEmail;
+    if (clientPhone !== undefined) update.clientPhone = clientPhone;
+    if (startDate !== undefined) update.startDate = startDate ? new Date(startDate) : undefined;
+    if (expectedCompletionDate !== undefined) update.expectedCompletionDate = expectedCompletionDate ? new Date(expectedCompletionDate) : undefined;
 
     const site = await Site.findByIdAndUpdate(siteId, update, { new: true });
     if (!site) {

@@ -52,6 +52,10 @@ export interface SiteDto {
   image?: string;
   createdAt: string;
   contractValue?: number;
+  clientEmail?: string;
+  clientPhone?: string;
+  startDate?: string;
+  expectedCompletionDate?: string;
 }
 
 export interface FeedUserDto {
@@ -292,12 +296,17 @@ export const siteApi = {
       token,
     }),
 
+
   createSite: (
     body: {
       name: string;
       description?: string;
-      contractValue:number;
+      contractValue: number;
       image?: string;
+      clientEmail?: string;
+      clientPhone?: string;
+      startDate?: string;
+      expectedCompletionDate?: string;
     },
     token: string
   ) =>
@@ -310,7 +319,19 @@ export const siteApi = {
       token,
     }),
 
-  updateSite: (siteId: string, body: { name?: string; description?: string; contractValue?: number }, token: string) =>
+  updateSite: (
+    siteId: string,
+    body: {
+      name?: string;
+      description?: string;
+      contractValue?: number;
+      clientEmail?: string;
+      clientPhone?: string;
+      startDate?: string;
+      expectedCompletionDate?: string;
+    },
+    token: string
+  ) =>
     request<{ message: string; site: SiteDto }>(`/sites/${siteId}`, {
       method: "PUT",
       body,

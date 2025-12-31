@@ -10,6 +10,10 @@ export interface Site {
   image?: string;
   contractValue?: number;
   createdAt: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  startDate?: string;
+  expectedCompletionDate?: string;
 }
 
 interface CreateSiteInput {
@@ -64,6 +68,10 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
           image: site.image,
           contractValue: (site as any).contractValue ?? 0,
           createdAt: site.createdAt,
+          clientEmail: (site as any).clientEmail,
+          clientPhone: (site as any).clientPhone,
+          startDate: (site as any).startDate,
+          expectedCompletionDate: (site as any).expectedCompletionDate,
         }));
 
         setSites(apiSites);
@@ -120,6 +128,10 @@ export const SiteProvider = ({ children }: { children: ReactNode }) => {
           image: response.site.image,
           contractValue: (response.site as any).contractValue ?? 0,
           createdAt: response.site.createdAt,
+          clientEmail: (response.site as any).clientEmail,
+          clientPhone: (response.site as any).clientPhone,
+          startDate: (response.site as any).startDate,
+          expectedCompletionDate: (response.site as any).expectedCompletionDate,
         };
 
         setSites((prev) => [created, ...prev]);

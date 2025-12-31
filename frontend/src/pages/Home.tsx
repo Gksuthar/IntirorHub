@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
-import { feedApi, expenseApi } from "../services/api";
+import { feedApi, expenseApi, boqApi } from "../services/api";
 
 interface FeedItem {
   id: string;
@@ -59,17 +59,38 @@ const Home: React.FC = () => {
   const expenseHealthPercent = totalBudget > 0 ? Math.round((usedAmount / totalBudget) * 100) : 0;
   const expenseHealthRemaining = remainingAmount;
   
-  // Calculate days remaining (mock data - should come from site data)
-  const daysRemaining = 34;
-  
-  // Mock BOQ stats (should be fetched from API)
-  const boqStats = {
-    total: 142,
-    approved: 98,
-    pending: 44,
-  };
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [startDateDisplay, setStartDateDisplay] = useState<string | null>(null);
+  const [targetDateDisplay, setTargetDateDisplay] = useState<string | null>(null);
+
+  const [boqStats, setBoqStats] = useState<{ total: number; approved: number; pending: number; totalCost?: number }>({
+    total: 0,
+    approved: 0,
+    pending: 0,
+  });
 
   useEffect(() => {
+    const loadBOQStats = async () => {
+      if (!token || !activeSite?.id) {
+        setBoqStats({ total: 0, approved: 0, pending: 0 });
+        return;
+      }
+      try {
+        const res = await boqApi.getBOQItemsBySite(activeSite.id, token);
+        if (res && res.stats) {
+          setBoqStats({
+            total: res.stats.total ?? 0,
+            approved: res.stats.approved ?? 0,
+            pending: res.stats.pending ?? 0,
+            totalCost: res.stats.totalCost ?? 0,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load BOQ stats', err);
+        setBoqStats({ total: 0, approved: 0, pending: 0 });
+      }
+    };
+
     const loadRecentFeeds = async () => {
       if (!token || !activeSite?.id) {
         setRecentFeeds([]);
@@ -95,6 +116,7 @@ const Home: React.FC = () => {
       }
     };
 
+    loadBOQStats();
     loadRecentFeeds();
   }, [activeSite, token]);
 
@@ -115,6 +137,63 @@ const Home: React.FC = () => {
 
     fetchExpenses();
   }, [activeSite, token]);
+
+  // Compute days remaining using site metadata saved in localStorage or activeSite fields
+  useEffect(() => {
+    if (!activeSite) {
+      setDaysRemaining(null);
+      setStartDateDisplay(null);
+      setTargetDateDisplay(null);
+      return;
+    }
+
+    // Try to read metadata from localStorage keyed by site name
+    const metaKey = `site-meta:${activeSite.name}`;
+    const raw = localStorage.getItem(metaKey);
+    let startIso: string | undefined;
+    let targetIso: string | undefined;
+
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        startIso = parsed.startDate;
+        targetIso = parsed.expectedCompletionDate;
+      } catch {}
+    }
+
+    // Fallback: check for common fields on activeSite
+    if (!startIso && (activeSite as any).startDate) startIso = (activeSite as any).startDate;
+    if (!targetIso && (activeSite as any).expectedCompletionDate) targetIso = (activeSite as any).expectedCompletionDate;
+
+    const fmt = (iso?: string | null) => {
+      if (!iso) return null;
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString('en-US', { month: 'short', day: 'numeric' });
+      } catch {
+        return iso;
+      }
+    };
+
+    setStartDateDisplay(fmt(startIso ?? null));
+    setTargetDateDisplay(fmt(targetIso ?? null));
+
+    if (targetIso) {
+      try {
+        const now = new Date();
+        const target = new Date(targetIso);
+        const diffMs = target.getTime() - now.getTime();
+        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        setDaysRemaining(days >= 0 ? days : 0);
+        return;
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    // fallback static
+    setDaysRemaining(34);
+  }, [activeSite]);
 
   const getRelativeTime = (timestamp: string) => {
     try {
@@ -169,8 +248,6 @@ const Home: React.FC = () => {
 
   const siteName = activeSite?.name || "Project";
   const siteCategory =  "Residential";
-  const startDate = "12 Oct";
-  const targetDate = "20 Dec";
 
   return (
     <div className="relative max-w-md mx-auto px-0 pt-6 pb-28">
@@ -199,7 +276,7 @@ const Home: React.FC = () => {
               <span className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/50 block"></span>
             </div>
             <div className="flex items-baseline justify-center gap-2">
-              <span className="text-5xl font-bold text-white drop-shadow-lg">{daysRemaining}</span>
+              <span className="text-5xl font-bold text-white drop-shadow-lg">{daysRemaining ?? 34}</span>
               <span className="text-lg font-semibold text-white/80">Days</span>
             </div>
             <span className="text-[11px] font-bold text-white/60 uppercase tracking-widest">Remaining</span>
@@ -214,7 +291,7 @@ const Home: React.FC = () => {
               </div>
               <div>
                 <p className="text-[10px] text-white/50 font-bold uppercase tracking-wider">Start</p>
-                <p className="text-white font-bold">{startDate}</p>
+                <p className="text-white font-bold">{startDateDisplay ?? '-'}</p>
               </div>
             </div>
             <div className="flex-1 flex items-center justify-center px-4">
@@ -226,7 +303,7 @@ const Home: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-[10px] text-white/50 font-bold uppercase tracking-wider">Target</p>
-                <p className="text-white font-bold">{targetDate}</p>
+                <p className="text-white font-bold">{targetDateDisplay ?? '-'}</p>
               </div>
               <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center shadow-inner">
                 <Check className="w-5 h-5 text-white" />

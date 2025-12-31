@@ -35,6 +35,11 @@ const boqItemSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
   referenceImage: {
     path: { type: String, default: null },
     filename: { type: String, default: null }

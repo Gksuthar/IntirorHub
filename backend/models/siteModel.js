@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const SiteSchema = new mongoose.Schema(
@@ -18,6 +19,20 @@ const SiteSchema = new mongoose.Schema(
     contractValue: {
       type: Number,
       default: 0,
+    },
+    clientEmail: {
+      type: String,
+      trim: true,
+    },
+    clientPhone: {
+      type: String,
+      trim: true,
+    },
+    startDate: {
+      type: Date,
+    },
+    expectedCompletionDate: {
+      type: Date,
     },
     companyName: {
       type: String,

@@ -346,10 +346,10 @@ const Payments: React.FC = () => {
                   {isAdmin && (
                     <button
                       onClick={() => handleMarkPaid(payment._id)}
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-blue-200 transition-all"
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 whitespace-nowrap hover:shadow-lg hover:shadow-blue-200 transition-all"
                     >
-                      <CheckCircle2 className="w-5 h-5" />
-                      Mark Paid
+                      <CheckCircle2 className="w-5 h-5 shrink-0" />
+                      <span>Mark Paid</span>
                     </button>
                   )}
                   {canManagePayments && (
@@ -437,7 +437,7 @@ const Payments: React.FC = () => {
                     step="0.01"
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent "
                     placeholder="500000"
                   />
                 </div>

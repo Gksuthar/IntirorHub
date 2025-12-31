@@ -8,7 +8,9 @@ import {
   X,
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
+import { useAuth } from "../context/AuthContext";
 import { boqApi } from "../services/api";
+import jsPDF from 'jspdf';
 
 interface BOQItem {
   id: number;
@@ -19,6 +21,7 @@ interface BOQItem {
   amount: number;
   category: "furniture" | "services";
   comments?: number;
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 interface Room {
@@ -32,13 +35,14 @@ const BOQ: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editedRoomName, setEditedRoomName] = useState<string>("");
-  const isAdmin = true; // Set to true or use your own logic for admin check
   const { activeSite } = useSite();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<"furniture" | "services" | "all">("all");
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
   const [boqItems, setBoqItems] = useState<any[]>([]);
   const [showAddRoomModal, setShowAddRoomModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
+
   const [boqForm, setBoqForm] = useState({
     roomName: '',
     itemName: '',
@@ -48,6 +52,12 @@ const BOQ: React.FC = () => {
     comments: '',
     referenceImage: null as File | null,
   });
+
+  // Role-based permissions
+  const canAddItems = user && ['ADMIN', 'MANAGER', 'AGENT'].includes(user.role);
+  const canApproveItems = user && ['ADMIN', 'CLIENT'].includes(user.role);
+  const isAdmin = user?.role === 'ADMIN';
+
   const allRoomNames = useMemo(() => {
     const roomNames = new Set<string>();
     boqItems.forEach((item: any) => {
@@ -85,6 +95,7 @@ const BOQ: React.FC = () => {
             amount: item.totalCost,
             category: 'furniture', // TODO: determine from item or add to backend
             comments: item.comments,
+            status: item.status,
           });
           roomMap[roomName].subtotal += item.totalCost;
         }
@@ -223,10 +234,297 @@ const BOQ: React.FC = () => {
     setEditedRoomName("");
   };
 
+  // Generate a PDF by capturing the room DOM as an image using html2canvas
+  const generatePDFFromElement = async (room: Room) => {
+    try {
+      if (!room.items || room.items.length === 0) {
+        throw new Error('No items to export');
+      }
+
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      let yPosition = margin;
+
+    // Set font
+    pdf.setFont('helvetica', 'normal');
+
+    // Header
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('BILL OF QUANTITIES', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+
+    // Company/Project Info
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Project: ${activeSite?.name || 'N/A'}`, margin, yPosition);
+    yPosition += 8;
+    pdf.text(`Room: ${room.name}`, margin, yPosition);
+    yPosition += 8;
+    pdf.text(`Date: ${new Date().toLocaleDateString()}`, margin, yPosition);
+    yPosition += 15;
+
+    console.log('Header section completed, yPosition:', yPosition);
+
+    // Table Header
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+
+    // Draw table header background
+    pdf.setFillColor(240, 240, 240);
+    pdf.rect(margin, yPosition - 5, pageWidth - 2 * margin, 12, 'F');
+
+    // Draw header border
+    pdf.setLineWidth(0.5);
+    pdf.rect(margin, yPosition - 5, pageWidth - 2 * margin, 12);
+
+    // Define column positions
+    const colPositions = {
+      sno: margin + 5,
+      item: margin + 20,
+      quantity: margin + 100,
+      unit: margin + 130,
+      rate: margin + 150,
+      amount: pageWidth - margin - 35
+    };
+
+    // Draw vertical lines for table columns
+    const columnLines = [
+      margin, // Left border
+      margin + 15, // After S.No
+      margin + 90, // After Item Description
+      margin + 125, // After Quantity
+      margin + 145, // After Unit
+      margin + 175, // After Rate
+      pageWidth - margin // Right border
+    ];
+
+    // Table content
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+
+    room.items.forEach((item, index) => {
+      console.log(`Processing item ${index + 1}:`, {
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        rate: item.rate,
+        amount: item.amount,
+        status: item.status
+      });
+
+      // Check if we need a new page
+      if (yPosition > pageHeight - 40) {
+        pdf.addPage();
+        yPosition = margin;
+
+        // Redraw header on new page
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(margin, yPosition - 5, pageWidth - 2 * margin, 12, 'F');
+
+        // Draw header border
+        pdf.setLineWidth(0.5);
+        pdf.rect(margin, yPosition - 5, pageWidth - 2 * margin, 12);
+
+        pdf.text('S.No', colPositions.sno, yPosition + 2);
+        pdf.text('Item Description', colPositions.item, yPosition + 2);
+        pdf.text('Quantity', colPositions.quantity, yPosition + 2);
+        pdf.text('Unit', colPositions.unit, yPosition + 2);
+        pdf.text('Rate (₹)', colPositions.rate, yPosition + 2);
+        pdf.text('Amount (₹)', colPositions.amount, yPosition + 2);
+
+        yPosition += 15;
+        pdf.setLineWidth(0.5);
+        pdf.line(margin, yPosition - 3, pageWidth - margin, yPosition - 3);
+
+        // Redraw vertical lines
+        pdf.setLineWidth(0.3);
+        columnLines.forEach(x => {
+          pdf.line(x, yPosition - 18, x, yPosition - 3);
+        });
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+      }
+
+      const isEvenRow = index % 2 === 0;
+
+      // Alternate row background
+      // Item name (with word wrap)
+      const itemName = item.name;
+      const maxItemWidth = 70; // Width available for item description
+      const lines = pdf.splitTextToSize(itemName, maxItemWidth);
+
+      // Calculate row height based on text lines
+      const lineHeight = 5;
+      const rowHeight = Math.max(12, lines.length * lineHeight);
+
+      if (isEvenRow) {
+        pdf.setFillColor(250, 250, 250);
+        pdf.rect(margin, yPosition - 3, pageWidth - 2 * margin, rowHeight, 'F');
+      }
+      // Draw row borders
+      pdf.setLineWidth(0.3);
+      pdf.rect(margin, yPosition - 3, pageWidth - 2 * margin, rowHeight);
+      // Serial number
+      pdf.text((index + 1).toString(), colPositions.sno, yPosition + 2);
+
+      pdf.text(lines, colPositions.item, yPosition + 2);
+
+      // Quantity
+      pdf.text(item.quantity.toString(), colPositions.quantity, yPosition + 2);
+
+      // Unit
+      pdf.text(item.unit, colPositions.unit, yPosition + 2);
+
+      // Rate (right-aligned)
+      const rateText = formatCurrency(item.rate).replace('₹', '').trim();
+      const rateWidth = pdf.getTextWidth(rateText);
+      pdf.text(rateText, colPositions.rate + 20 - rateWidth, yPosition + 2);
+
+      // Amount (right-aligned)
+      const amountText = formatCurrency(item.amount).replace('₹', '').trim();
+      const amountWidth = pdf.getTextWidth(amountText);
+      pdf.text(amountText, colPositions.amount + 30 - amountWidth, yPosition + 2);
+
+      yPosition += rowHeight;
+    });
+
+    // Total
+    yPosition += 10;
+    if (yPosition > pageHeight - 20) {
+      pdf.addPage();
+      yPosition = margin;
+    }
+
+    // Draw total line
+    pdf.setLineWidth(1);
+    pdf.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(12);
+    pdf.text('TOTAL AMOUNT:', pageWidth - margin - 80, yPosition + 5);
+    pdf.text(formatCurrency(room.subtotal).replace('₹', ''), pageWidth - margin - 25, yPosition + 5);
+
+    // Footer
+    const footerY = pageHeight - 20;
+    pdf.setFont('helvetica', 'italic');
+    pdf.setFontSize(8);
+    pdf.text('Generated by IntirorHub - Professional Interior Design Management', pageWidth / 2, footerY, { align: 'center' });
+
+    return pdf;
+  } catch (error) {
+    console.error('Error in generatePDFFromElement:', error);
+    throw error; // Re-throw to be caught by handleExportPDF
+  }
+};
+
+  const handleExportPDF = async (room: Room) => {
+    try {
+      if (!room.items || room.items.length === 0) {
+        alert('No items found in this room to export.');
+        return;
+      }
+
+      // Try full PDF generation
+      const pdf = await generatePDFFromElement(room);
+      const projectName = activeSite?.name || 'Project';
+      const filename = `${projectName}_${room.name}_BOQ_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(filename);
+      alert(`PDF downloaded successfully as: ${filename}`);
+    } catch (err) {
+      console.error('Simple PDF export failed:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      alert(`Failed to generate PDF: ${errorMessage}`);
+    }
+  };
+
+  const handleShareBOQ = async (room: Room) => {
+    try {
+      const pdf = await generatePDFFromElement(room);
+      const blob = pdf.output('blob');
+      const projectName = activeSite?.name || 'Project';
+      const filename = `${projectName}_${room.name}_BOQ_${new Date().toISOString().split('T')[0]}.pdf`;
+      const file = new File([blob], filename, { type: 'application/pdf' });
+
+      // Try Web Share API first
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await (navigator as any).share({
+            title: `BOQ for ${room.name}`,
+            text: `Bill of Quantities for ${room.name}`,
+            files: [file],
+          });
+          return;
+        } catch (err) {
+          console.error('Web Share failed:', err);
+        }
+      }
+
+      // WhatsApp sharing
+      const url = URL.createObjectURL(blob);
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
+        `BOQ for ${room.name}\n\nPlease find attached the Bill of Quantities document.\n\nGenerated by IntirorHub`
+      )}`;
+
+      // Open WhatsApp in new tab
+      window.open(whatsappUrl, '_blank');
+
+      // Also provide download as fallback
+      setTimeout(() => {
+        const a = document.createElement('a');
+        a.href = url;
+        const projectName = activeSite?.name || 'Project';
+        const filename = `${projectName}_${room.name}_BOQ_${new Date().toISOString().split('T')[0]}.pdf`;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1000);
+
+    } catch (err) {
+      console.error('Share BOQ failed:', err);
+      // Fallback: just download
+      try {
+        const pdf = await generatePDFFromElement(room);
+        pdf.save(`${room.name}_BOQ.pdf`);
+      } catch (fallbackErr) {
+        console.error('Fallback download failed:', fallbackErr);
+      }
+    }
+  };
+
   const handleAddUnit = (roomId: string) => {
     // This will trigger the Add Item functionality
     // For now, we can show an alert or trigger the Add Item button
     console.log("Add unit for room:", roomId);
+  };
+
+  const handleApproveItem = async (itemId: string) => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    try {
+      await boqApi.updateBOQStatus(itemId, 'approved', token);
+      fetchBOQItems();
+    } catch (error) {
+      console.error('Failed to approve BOQ item', error);
+    }
+  };
+
+  const handleRejectItem = async (itemId: string) => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    try {
+      await boqApi.updateBOQStatus(itemId, 'rejected', token);
+      fetchBOQItems();
+    } catch (error) {
+      console.error('Failed to reject BOQ item', error);
+    }
   };
 
   const filteredRooms = selectedRoom === "all" 
@@ -249,6 +547,14 @@ const BOQ: React.FC = () => {
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Bill of Quantities</h2>
         <p className="text-slate-500 text-sm">Comprehensive cost breakdown and project estimation</p>
+        {/* <div className="mt-4 flex items-center justify-center gap-3">
+          <button
+            onClick={() => setShowCreateProjectModal(true)}
+            className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors"
+          >
+            Create New Site/ Project
+          </button>
+        </div> */}
       </div>
 
       {/* Category Filters */}
@@ -478,6 +784,8 @@ const BOQ: React.FC = () => {
         </div>
       )}
 
+     
+
       {/* Room Sections */}
       <div className="space-y-4">
         {filteredRooms.map((room) => {
@@ -487,7 +795,7 @@ const BOQ: React.FC = () => {
           const roomSubtotal = filteredItems.reduce((sum, item) => sum + item.amount, 0);
 
           return (
-            <div key={room.id} className="bg-white rounded-3xl p-5 mb-4 shadow-sm border border-slate-100">
+            <div id={`boq-room-${room.id}`} key={room.id} className="bg-white rounded-3xl p-5 mb-4 shadow-sm border border-slate-100">
               {/* Room Header */}
               <div className="flex items-center justify-between mb-4 ">
                 <div className="flex items-center gap-2">
@@ -528,38 +836,41 @@ const BOQ: React.FC = () => {
                     </>
                   )}
                 </div>
-                <button 
-                  onClick={() => {
-                    setBoqForm({...boqForm, roomName: room.name});
-                    setShowAddModal(true);
-                  }}  
-                  className="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-blue-600 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Item
-                </button>
+                {canAddItems && (
+                  <button 
+                    onClick={() => {
+                      setBoqForm({...boqForm, roomName: room.name});
+                      setShowAddModal(true);
+                    }}  
+                    className="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-blue-600 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Item
+                  </button>
+                )}
               </div>
 
               {filteredItems.length > 0 ? (
                 <>
                   {/* Table Header */}
                   <div className="grid grid-cols-12 gap-2 mb-3 px-2">
-                    <div className="col-span-5 text-[10px] font-semibold tracking-wider text-slate-400">ITEM NAME</div>
-                    <div className="col-span-4 text-[10px] font-semibold tracking-wider text-slate-400 text-center">QUANTITY</div>
-                    <div className="col-span-3 text-[10px] font-semibold tracking-wider text-slate-400 text-right">RATE</div>
+                    <div className="col-span-4 text-[10px] font-semibold tracking-wider text-slate-400">ITEM NAME</div>
+                    <div className="col-span-3 text-[10px] font-semibold tracking-wider text-slate-400 text-center">QUANTITY</div>
+                    <div className="col-span-2 text-[10px] font-semibold tracking-wider text-slate-400 text-center">STATUS</div>
+                    <div className="col-span-3 text-[10px] font-semibold tracking-wider text-slate-400 text-right">AMOUNT</div>
                   </div>
 
                   {/* Items List */}
                   <div className="space-y-3">
                     {filteredItems.map((item) => (
                       <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-50 last:border-0">
-                        <div className="col-span-5 flex items-center gap-2">
+                        <div className="col-span-4 flex items-center gap-2">
                           <div className={`w-1 h-10 rounded-full ${
                             item.category === "furniture" ? "bg-blue-500" : "bg-amber-500"
                           }`}></div>
                           <span className="font-semibold text-slate-800">{item.name}</span>
                         </div>
-                        <div className="col-span-4 text-center">
+                        <div className="col-span-3 text-center">
                           <div className="flex items-center justify-center gap-1">
                             <span className="font-semibold text-slate-700">{item.quantity} {item.unit}</span>
                             {isAdmin && (
@@ -574,8 +885,37 @@ const BOQ: React.FC = () => {
                           </div>
                           <p className="text-[10px] text-slate-400">Qty</p>
                         </div>
+                        <div className="col-span-2 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              item.status === 'approved' ? 'bg-green-100 text-green-800' :
+                              item.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {item.status || 'pending'}
+                            </span>
+                            {canApproveItems && item.status === 'pending' && (
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => handleApproveItem(item.id.toString())}
+                                  className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
+                                  title="Approve"
+                                >
+                                  <Check className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleRejectItem(item.id.toString())}
+                                  className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                                  title="Reject"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                         <div className="col-span-3 text-right">
-                          <span className="font-bold text-slate-800">{formatCurrency(item.rate)}</span>
+                          <span className="font-bold text-slate-800">{formatCurrency(item.amount)}</span>
                         </div>
                       </div>
                     ))}
@@ -596,12 +936,23 @@ const BOQ: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-3 mt-4">
-                <button className="flex-1 bg-slate-800 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-700 transition-all">
-                  <Download className="w-5 h-5" />
+                <button 
+                  onClick={() => handleExportPDF(room)}
+                  disabled={room.items.length === 0}
+                  className={`flex-1 font-semibold py-3 px-2 rounded-xl flex items-center justify-center gap-1 transition-all ${
+                    room.items.length === 0 
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                      : 'bg-slate-600 text-white hover:bg-slate-700'
+                  }`}
+                >
+                  <Download className="w-4 h-4" />
                   Export PDF
                 </button>
-                <button className="flex-1 bg-white border-2 border-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all">
-                  <Share2 className="w-5 h-5" />
+                <button 
+                  onClick={() => handleShareBOQ(room)}
+                  className="flex-1 bg-green-600 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-green-700 transition-all"
+                >
+                  <Share2 className="w-4 h-4" />
                   Share BOQ
                 </button>
               </div>

@@ -29,6 +29,7 @@ export const addBOQItem = async (req, res) => {
       totalCost: Number(totalCost),
       comments,
       siteId,
+      status: ['MANAGER', 'AGENT'].includes(req.user.role) ? 'pending' : 'approved',
       createdBy: req.user._id,
       companyName: req.user.companyName
     });
@@ -75,12 +76,18 @@ export const getBOQItemsBySite = async (req, res) => {
     // Calculate stats
     const totalItems = boqItems.length;
     const totalCost = boqItems.reduce((sum, item) => sum + item.totalCost, 0);
+    const approved = boqItems.filter(item => item.status === 'approved').length;
+    const pending = boqItems.filter(item => item.status === 'pending').length;
+    const rejected = boqItems.filter(item => item.status === 'rejected').length;
     const roomCount = Object.keys(groupedItems).length;
 
     res.json({
       boqItems: groupedItems,
       stats: {
-        totalItems,
+        total: totalItems,
+        approved,
+        pending,
+        rejected,
         totalCost,
         roomCount
       }
@@ -88,6 +95,68 @@ export const getBOQItemsBySite = async (req, res) => {
   } catch (error) {
     console.error('Error fetching BOQ items', error);
     res.status(500).json({ message: 'Error fetching BOQ items', error: error.message });
+  }
+};
+
+export const updateBOQStatus = async (req, res) => {
+  try {
+    const { boqId } = req.params;
+    const { status } = req.body;
+
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    const boqItem = await BOQItem.findById(boqId);
+    if (!boqItem) return res.status(404).json({ message: 'BOQ item not found' });
+
+    const site = await Site.findById(boqItem.siteId);
+    if (!site) return res.status(404).json({ message: 'Site not found' });
+
+    const hasAccess = site.companyName === req.user.companyName ||
+                      (req.user.siteAccess && req.user.siteAccess.some(id => id.toString() === boqItem.siteId.toString()));
+    if (!hasAccess) return res.status(403).json({ message: 'You do not have access to this site' });
+
+    // Check permissions: Admin and Client can approve/reject, others cannot change status
+    if (status !== 'pending' && !['ADMIN', 'CLIENT'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'You do not have permission to approve or reject BOQ items' });
+    }
+
+    boqItem.status = status;
+    await boqItem.save();
+
+    res.json({ message: 'BOQ item status updated', boqItem });
+  } catch (error) {
+    console.error('Error updating BOQ status', error);
+    res.status(500).json({ message: 'Error updating BOQ status', error: error.message });
+  }
+};
+
+export const deleteBOQItem = async (req, res) => {
+  try {
+    const { boqId } = req.params;
+
+    const boqItem = await BOQItem.findById(boqId);
+    if (!boqItem) return res.status(404).json({ message: 'BOQ item not found' });
+
+    const site = await Site.findById(boqItem.siteId);
+    if (!site) return res.status(404).json({ message: 'Site not found' });
+
+    const hasAccess = site.companyName === req.user.companyName ||
+                      (req.user.siteAccess && req.user.siteAccess.some(id => id.toString() === boqItem.siteId.toString()));
+    if (!hasAccess) return res.status(403).json({ message: 'You do not have access to this site' });
+
+    // Only Admin can delete
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admins can delete BOQ items' });
+    }
+
+    await BOQItem.findByIdAndDelete(boqId);
+
+    res.json({ message: 'BOQ item deleted' });
+  } catch (error) {
+    console.error('Error deleting BOQ item', error);
+    res.status(500).json({ message: 'Error deleting BOQ item', error: error.message });
   }
 };
 
