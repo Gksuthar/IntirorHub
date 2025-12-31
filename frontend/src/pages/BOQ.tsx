@@ -6,6 +6,7 @@ import {
   Pencil,
   Check,
   X,
+  Clock,
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
 import { useAuth } from "../context/AuthContext";
@@ -892,7 +893,8 @@ const BOQ: React.FC = () => {
                               item.status === 'rejected' ? 'bg-red-100 text-red-800' :
                               'bg-yellow-100 text-yellow-800'
                             }`}>
-                              {item.status || 'pending'}
+                              {item.status === 'approved' && <Check className="inline w-3 h-3" />}
+                              {item.status === 'pending' && <Clock className="inline w-3 h-3" />}
                             </span>
                             {canApproveItems && item.status === 'pending' && (
                               <div className="flex gap-1">
