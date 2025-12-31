@@ -15,7 +15,6 @@ import { useAuth } from "../context/AuthContext";
 import { useSite } from "../context/SiteContext";
 import { expenseApi } from "../services/api";
 import AddExpenseModal from "../component/AddExpenseModal";
-import jsPDF from 'jspdf';
 
 interface ExpenseItem {
   _id: string;
