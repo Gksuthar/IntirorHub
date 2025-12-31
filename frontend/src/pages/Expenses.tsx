@@ -223,7 +223,6 @@ const Expenses: React.FC = () => {
   };
 
 
-
   const fetchExpenses = async () => {
     if (!token || !activeSite) return;
     try {
