@@ -562,9 +562,9 @@ const Expenses: React.FC = () => {
               return (
               <div key={expense._id} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                 {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h4 className="font-bold text-slate-800 text-lg mb-2">
+                <div className="flex items-start justify-start mb-3">
+                  <div className="flex flex-col items-start text-left flex-1">
+                    <h4 className="font-bold text-slate-800 text-lg mb-2 ml-[10px]">
                       {expense.title}
                     </h4>
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(expense.category)}`}>
@@ -732,7 +732,7 @@ const Expenses: React.FC = () => {
       )}
 
       {/* Floating Share Expenses Button */}
-      <button
+      {/* <button
         onClick={handleShareExpenses}
         title="Share Expenses Report"
         className="fixed bottom-24 right-20 w-14 h-14 bg-green-600 text-white rounded-full shadow-lg shadow-green-300 flex items-center justify-center hover:bg-green-700 transition-all hover:scale-105 z-40"
@@ -740,7 +740,7 @@ const Expenses: React.FC = () => {
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
         </svg>
-      </button>
+      </button> */}
       
       {/* Add Expense Modal */}
       <AddExpenseModal

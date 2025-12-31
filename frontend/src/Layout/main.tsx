@@ -113,7 +113,7 @@ const MainLayout = () => {
             <Header />
             <div className="pb-32 pt-44 lg:pt-32 lg:pb-24">
                 <div className={showPaymentModal ? 'pointer-events-none select-none filter blur-sm' : ''}>
-                    <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+                    <div className="max-w-7xl mx-auto  md:px-6 lg:px-8">
                         <Outlet />
                     </div>
                 </div>

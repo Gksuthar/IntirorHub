@@ -209,7 +209,7 @@ const Payments: React.FC = () => {
   const progressPercentage = Math.min(100, Math.max(0, rawPercent));
 
   return (
-<div className="min-h-screen pt-20 p-2 md:px-6">
+<div className="min-h-screen pt-2  md:px-2">
       <div className="max-w-md mx-auto">
 
         {payments.length > 0 && (
@@ -303,12 +303,12 @@ const Payments: React.FC = () => {
           {payments.map((payment) => (
             <div
               key={payment._id}
-              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100"
+              className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h4 className="font-bold text-slate-800">{payment.title}</h4>
-                  <p className="text-sm text-slate-400">{contractValue > 0 ? Math.round((payment.amount / contractValue) * 100) : 0}% of total</p>
+                  <h4 className="font-bold text-slate-800 text-base mb-1">{payment.title}</h4>
+                  <p className="text-xs font-semibold text-slate-400 mb-1">{contractValue > 0 ? Math.round((payment.amount / contractValue) * 100) : 0}% of total</p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-slate-800">{formatCurrency(payment.amount)}</p>
@@ -325,7 +325,7 @@ const Payments: React.FC = () => {
                   )}
                 </div>
               </div>
-              <p className="text-sm text-slate-500 mb-4">
+              <p className="text-xs text-slate-500 mb-4">
                 Due: {new Date(payment.dueDate).toLocaleDateString("en-IN", {
                   day: "2-digit",
                   month: "short",
@@ -356,7 +356,7 @@ const Payments: React.FC = () => {
                     <button
                       onClick={() => handleRemind(payment._id)}
                       disabled={remindingPaymentId === payment._id}
-                      className={`${
+                      className={`$
                         isAdmin ? "flex-1" : "w-full"
                       } bg-white border-2 border-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all ${remindingPaymentId === payment._id ? 'opacity-70 cursor-wait' : ''}`}
                     >
