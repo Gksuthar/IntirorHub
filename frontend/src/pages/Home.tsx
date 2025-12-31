@@ -5,7 +5,6 @@ import {
   Clock,
   Calendar,
   Check,
-  TrendingUp,
   Package,
   CreditCard,
   ArrowDownLeft,
