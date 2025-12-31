@@ -516,11 +516,6 @@ const BOQ: React.FC = () => {
     }
   };
 
-  const handleAddUnit = (roomId: string) => {
-    // This will trigger the Add Item functionality
-    // For now, we can show an alert or trigger the Add Item button
-    console.log("Add unit for room:", roomId);
-  };
 
   const handleApproveItem = async (itemId: string) => {
     const token = localStorage.getItem('authToken');
@@ -939,12 +934,12 @@ const BOQ: React.FC = () => {
         </span>
 
         <button
-          className={`p-1 rounded-full hover:bg-slate-100 boq-menu-btn relative ${openMenuId === item.id ? 'bg-slate-100' : ''}`}
-          onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+          className={`p-1 rounded-full hover:bg-slate-100 boq-menu-btn relative ${openMenuId === String(item.id) ? 'bg-slate-100' : ''}`}
+          onClick={() => setOpenMenuId(openMenuId === String(item.id) ? null : String(item.id))}
           aria-label="More actions"
         >
           <MoreVertical className="w-5 h-5 text-slate-500" />
-          {openMenuId === item.id && (
+          {openMenuId === String(item.id) && (
             <div className="boq-menu-dropdown absolute right-0 top-8 z-10 bg-white border border-slate-200 rounded shadow-md min-w-[120px]">
               {canApproveItems && (
                 <button

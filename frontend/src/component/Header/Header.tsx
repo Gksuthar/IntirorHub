@@ -248,12 +248,7 @@ const Header: React.FC = () => {
               <div className="max-h-64 overflow-y-auto py-1">
                 {sites.length ? (
                   sites.map((site) => {
-                    const initials = site.name
-                      .split(" ")
-                      .map((part) => part.charAt(0))
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase();
+                    // initials removed (was unused)
                     const isActiveSite = activeSite?.id === site.id;
 
                     // Calculate days left
