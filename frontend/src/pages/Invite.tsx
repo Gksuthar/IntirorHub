@@ -440,26 +440,42 @@ const Invite: React.FC = () => {
       key={member.id}
       className="flex flex-col rounded-xl border border-gray-100 bg-gray-50 p-4 h-full"
     >
-      <div className="flex items-center gap-3 mb-3">
-        <img
-          src={member.avatar}
-          alt={member.name}
-          className="h-12 w-12 flex-shrink-0 rounded-full"
-        />
-        <div className="flex-1 min-w-0">
-          <p className="truncate text-sm font-semibold text-gray-900">
-            {member.name}
-          </p>
-          {user?.role === "ADMIN" && (
-            <span className="mt-1 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-              {member.siteAccessCount ?? 0} sites
-            </span>
-          )}
-          <p className="truncate text-xs text-gray-500 mt-1">
-            {member.email}
-          </p>
+      {/* Header with name and delete icon */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3 flex-1">
+          <img
+            src={member.avatar}
+            alt={member.name}
+            className="h-12 w-12 flex-shrink-0 rounded-full"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="truncate text-sm font-semibold text-gray-900">
+              {member.name}
+            </p>
+            {user?.role === "ADMIN" && (
+              <span className="mt-1 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                {member.siteAccessCount ?? 0} sites
+              </span>
+            )}
+          </div>
         </div>
+        {/* Delete icon in top right */}
+        {user?.role === "ADMIN" && member.role !== "ADMIN" && (
+          <button
+            type="button"
+            onClick={() => setDeletingUser(member)}
+            className="rounded-full bg-red-50 p-2 hover:bg-red-100 transition-colors text-red-600"
+            title="Delete user"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
+
+      {/* Email */}
+      <p className="truncate text-xs text-gray-500 mb-3">
+        {member.email}
+      </p>
 
       {/* Role badge and Manage button row */}
       <div className="flex items-center justify-between mt-auto">
@@ -467,25 +483,13 @@ const Invite: React.FC = () => {
           {member.role}
         </span>
         {user?.role === "ADMIN" && (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => openEditSites(member)}
-              className="rounded-md bg-white px-3 py-1 text-xs font-medium border border-gray-100 hover:bg-gray-50 transition-colors"
-            >
-              Manage sites
-            </button>
-            {member.role !== "ADMIN" && (
-              <button
-                type="button"
-                onClick={() => setDeletingUser(member)}
-                className="rounded-md bg-red-50 px-2 py-1 text-xs font-medium border border-red-100 hover:bg-red-100 transition-colors text-red-600"
-                title="Delete user"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => openEditSites(member)}
+            className="rounded-md bg-white px-3 py-1 text-xs font-medium border border-gray-100 hover:bg-gray-50 transition-colors"
+          >
+            Manage sites
+          </button>
         )}
       </div>
     </div>

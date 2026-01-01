@@ -100,7 +100,10 @@ export const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
+    // Prevent deleted users from logging in
+    if (user.isDeleted) {
+      return res.status(403).json({ message: "This account has been deleted. Please contact your administrator." });
+    }
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -135,6 +138,11 @@ export const loginUser = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   try {
+    // Check if user is deleted
+    if (req.user.isDeleted) {
+      return res.status(403).json({ message: "This account has been deleted. Please contact your administrator." });
+    }
+
     const userObj = sanitizeUser(req.user);
 
     // Attach company payment status (check admin record for the company)
@@ -172,12 +180,44 @@ export const inviteUser = async (req, res) => {
 
     const existing = await userModel.findOne({ email });
     if (existing) {
+      // If user was deleted, restore them with new details
+      if (existing.isDeleted) {
+        const tempPassword = generateTemporaryPassword();
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+        existing.name = name || existing.name;
+        existing.phone = phone || existing.phone;
+        existing.role = normalizedRole;
+        existing.password = hashedPassword;
+        existing.isDeleted = false;
+        existing.siteAccess = siteIds && Array.isArray(siteIds) ? siteIds : [];
+        existing.isVerified = true;
+        existing.parentId = req.user._id;
+        
+        await existing.save();
+
+        await sendPasswordEmail({
+          to: email,
+          name: name || normalizedRole,
+          password: tempPassword,
+          companyName: req.user.companyName,
+          role: normalizedRole,
+          context: "invitation",
+          inviter: req.user.name || req.user.email,
+        });
+
+        return res.status(201).json({
+          message: "User re-invited successfully",
+          user: sanitizeUser(existing),
+        });
+      }
+      
       return res.status(409).json({ message: "Email already exists" });
     }
 
     if (phone) {
       const existingPhone = await userModel.findOne({ phone });
-      if (existingPhone) {
+      if (existingPhone && !existingPhone.isDeleted) {
         return res.status(409).json({ message: "Phone number already exists" });
       }
     }
@@ -225,7 +265,7 @@ export const listCompanyUsers = async (req, res) => {
     }
 
     const members = await userModel
-      .find({ companyName: req.user.companyName })
+      .find({ companyName: req.user.companyName, isDeleted: { $ne: true } })
       .select("name email role companyName createdAt siteAccess");
 
     const payload = members.map((member) => ({
@@ -576,8 +616,8 @@ export const deleteUser = async (req, res) => {
       return res.status(403).json({ message: 'You can only delete users from your company' });
     }
 
-    // Delete the user
-    await userModel.findByIdAndDelete(userId);
+    // Mark user as deleted instead of actually deleting
+    await userModel.findByIdAndUpdate(userId, { isDeleted: true });
 
     return res.status(200).json({ message: 'User deleted successfully', userId });
   } catch (error) {
