@@ -285,6 +285,15 @@ export const userApi = {
       body,
       token,
     }),
+  
+  deleteUser: (userId: string, token: string) =>
+    request<{
+      message: string;
+      userId: string;
+    }>(`/users/${userId}`, {
+      method: "DELETE",
+      token,
+    }),
 };
 
 export const siteApi = {

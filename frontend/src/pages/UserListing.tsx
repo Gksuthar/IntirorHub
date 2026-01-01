@@ -1,11 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRelatedUsers } from "../component/useRelatedUsers";
-import { Mail, User } from "lucide-react";
+import { Mail, User, Trash2 } from "lucide-react";
+import { userApi } from "../services/api";
 
 const UserListing: React.FC = () => {
-  const { token } = useAuth();
-  const { users, loading, error } = useRelatedUsers(token ?? undefined);
+  const { token, user: currentUser } = useAuth();
+  const { users, loading, error, refetch } = useRelatedUsers(token ?? undefined);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+
+  const isAdmin = currentUser?.role === "ADMIN";
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!token) return;
+    
+    const confirmDelete = window.confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`);
+    if (!confirmDelete) return;
+
+    setDeletingUserId(userId);
+    try {
+      await userApi.deleteUser(userId, token);
+      alert(`User ${userName} has been deleted successfully.`);
+      refetch(); // Refresh the user list
+    } catch (err: any) {
+      alert(err?.message || "Failed to delete user");
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -53,7 +75,7 @@ const UserListing: React.FC = () => {
             {users.map((user) => (
               <div
                 key={user.id}
-                className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-6"
+                className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-6 relative"
               >
                 <div className="flex flex-col items-center text-center">
                   {/* Avatar */}
@@ -87,6 +109,18 @@ const UserListing: React.FC = () => {
                       year: 'numeric' 
                     })}
                   </p>
+
+                  {/* Delete Button (Admin only) */}
+                  {isAdmin && user.id !== currentUser?._id && (
+                    <button
+                      onClick={() => handleDeleteUser(user.id, user.name)}
+                      disabled={deletingUserId === user.id}
+                      className="mt-4 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {deletingUserId === user.id ? "Deleting..." : "Delete User"}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

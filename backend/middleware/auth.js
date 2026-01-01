@@ -19,7 +19,7 @@ const AuthMiddleware = async (req, res, next) => {
 
         const user = await User.findById(decode.id).select("-password");
         if (!user) {
-            return res.status(401).json({ message: "User not found" });
+            return res.status(401).json({ message: "User not found or has been deleted" });
         }
         req.user = user;
         next();

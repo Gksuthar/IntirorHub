@@ -551,6 +551,41 @@ export const toggleCompanyPayment = async (req, res) => {
   }
 };
 
+export const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Only admins can delete users
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Forbidden: Only admins can delete users' });
+    }
+
+    // Find the user to delete
+    const userToDelete = await userModel.findById(userId);
+    if (!userToDelete) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prevent admin from deleting themselves
+    if (userToDelete._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'You cannot delete your own account' });
+    }
+
+    // Prevent deleting users from other companies (unless super admin)
+    if (userToDelete.companyName !== req.user.companyName) {
+      return res.status(403).json({ message: 'You can only delete users from your company' });
+    }
+
+    // Delete the user
+    await userModel.findByIdAndDelete(userId);
+
+    return res.status(200).json({ message: 'User deleted successfully', userId });
+  } catch (error) {
+    console.error('deleteUser error', error);
+    return res.status(500).json({ message: 'Unable to delete user' });
+  }
+};
+
 export default {
   registerAdmin,
   loginUser,
@@ -566,4 +601,5 @@ export default {
   getCompanyUsersByName,
   getCompanySites,
   toggleCompanyPayment,
+  deleteUser,
 };

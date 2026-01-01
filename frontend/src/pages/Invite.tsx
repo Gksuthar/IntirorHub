@@ -11,6 +11,7 @@ import {
   Building2,
   Plus,
   X,
+  Trash2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSite } from "../context/SiteContext";
@@ -125,6 +126,8 @@ const Invite: React.FC = () => {
   // Admin: edit existing user's site access
   const [editingUser, setEditingUser] = useState<CompanyUser | null>(null);
   const [editingSites, setEditingSites] = useState<string[]>([]);
+  const [deletingUser, setDeletingUser] = useState<CompanyUser | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const openEditSites = (member: CompanyUser) => {
     setEditingUser(member);
@@ -163,6 +166,24 @@ const Invite: React.FC = () => {
     } catch (err) {
       console.error("update user sites error", err);
       // optionally show error to user
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser || !token) return;
+    
+    setIsDeleting(true);
+    try {
+      await userApi.deleteUser(deletingUser.id, token);
+      setProjectUsers((prev) => prev.filter((p) => p.id !== deletingUser.id));
+      setSuccess(`User ${deletingUser.name} deleted successfully`);
+      setDeletingUser(null);
+    } catch (err) {
+      console.error("delete user error", err);
+      const message = err instanceof ApiError ? err.message : "Unable to delete user";
+      setError(message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -446,13 +467,25 @@ const Invite: React.FC = () => {
           {member.role}
         </span>
         {user?.role === "ADMIN" && (
-          <button
-            type="button"
-            onClick={() => openEditSites(member)}
-            className="rounded-md bg-white px-3 py-1 text-xs font-medium border border-gray-100 hover:bg-gray-50 transition-colors"
-          >
-            Manage sites
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => openEditSites(member)}
+              className="rounded-md bg-white px-3 py-1 text-xs font-medium border border-gray-100 hover:bg-gray-50 transition-colors"
+            >
+              Manage sites
+            </button>
+            {member.role !== "ADMIN" && (
+              <button
+                type="button"
+                onClick={() => setDeletingUser(member)}
+                className="rounded-md bg-red-50 px-2 py-1 text-xs font-medium border border-red-100 hover:bg-red-100 transition-colors text-red-600"
+                title="Delete user"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -504,6 +537,51 @@ const Invite: React.FC = () => {
                   className="rounded-xl bg-black px-4 py-2 text-white"
                 >
                   Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Delete User Confirmation Modal */}
+        {deletingUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-md rounded-xl bg-white p-6">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-red-100 p-3">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Delete User
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Are you sure you want to delete <strong>{deletingUser.name}</strong>? This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeletingUser(null)}
+                  disabled={isDeleting}
+                  className="rounded-xl px-4 py-2 border border-gray-200 hover:bg-gray-50 transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteUser}
+                  disabled={isDeleting}
+                  className="rounded-xl bg-red-600 px-4 py-2 text-white hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete User"
+                  )}
                 </button>
               </div>
             </div>

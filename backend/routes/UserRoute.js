@@ -1,6 +1,6 @@
 import { Router } from "express";
 import AuthMiddleware from "../middleware/auth.js";
-import { getProfile, inviteUser, listCompanyUsers, loginUser, registerAdmin, resendOtp, verifyOtp, listRelatedUsers, updateUserSiteAccess, forgotPassword, resetPassword, listAllCompanyAdmins, getCompanyUsersByName, getCompanySites, toggleCompanyPayment } from "../controllers/UserController.js";
+import { getProfile, inviteUser, listCompanyUsers, loginUser, registerAdmin, resendOtp, verifyOtp, listRelatedUsers, updateUserSiteAccess, forgotPassword, resetPassword, listAllCompanyAdmins, getCompanyUsersByName, getCompanySites, toggleCompanyPayment, deleteUser } from "../controllers/UserController.js";
 
 const userRouter = Router();
 
@@ -20,5 +20,6 @@ userRouter.get("/users/related", AuthMiddleware, listRelatedUsers);
 userRouter.post("/users/invite", AuthMiddleware, inviteUser);
 userRouter.put("/users/:userId/site-access", AuthMiddleware, updateUserSiteAccess);
 userRouter.put("/admin/company/:companyName/payment-due", AuthMiddleware, toggleCompanyPayment);
+userRouter.delete("/users/:userId", AuthMiddleware, deleteUser);
 
 export default userRouter;

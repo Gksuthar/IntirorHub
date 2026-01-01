@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export interface RelatedUser {
   id: string;
@@ -15,7 +15,7 @@ export function useRelatedUsers(token: string | undefined) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchUsers = useCallback(() => {
     if (!token) return;
     setLoading(true);
     fetch(`${import.meta.env.VITE_API_BASE_URL}/users/related`, {
@@ -30,5 +30,9 @@ export function useRelatedUsers(token: string | undefined) {
       .finally(() => setLoading(false));
   }, [token]);
 
-  return { users, loading, error };
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  return { users, loading, error, refetch: fetchUsers };
 }
